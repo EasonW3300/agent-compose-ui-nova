@@ -1,8 +1,18 @@
+import { BrowserRouter } from 'react-router-dom';
+import { useDaemonProbe } from './hooks/useDaemonProbe';
+import { SetupShell } from './ui/SetupShell';
+import { ConsoleLayout } from './ui/ConsoleLayout';
+
 export default function App() {
+  const { state } = useDaemonProbe();
+
+  if (state === 'probing') {
+    return <div role="status">正在寻找你电脑上的 agent-compose…</div>;
+  }
+
   return (
-    <div className="app-root">
-      <h1>Agent Compose 驾驶台</h1>
-      <p>你的 AI 助手，装进一个界面。</p>
-    </div>
+    <BrowserRouter>
+      {state === 'offline' ? <SetupShell /> : <ConsoleLayout />}
+    </BrowserRouter>
   );
 }
