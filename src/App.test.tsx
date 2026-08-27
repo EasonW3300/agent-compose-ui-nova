@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 
 const probeMock = vi.fn();
 vi.mock('./api/connection', async (orig) => {
@@ -39,6 +39,8 @@ describe('App 双世界决策', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       '正在寻找你电脑上的 agent-compose…',
     );
-    resolveProbe!('ok');
+    await act(async () => {
+      resolveProbe!('ok');
+    });
   });
 });

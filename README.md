@@ -1,6 +1,8 @@
-# React + TypeScript + Vite
+# agent-compose nova ui
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+面向非技术用户的 agent-compose 前端（React + Vite + TypeScript）。探测到本机
+agent-compose daemon 时进入主控台世界；未安装时进入装机向导世界。Provider 聚焦
+claude code / codex / pi / dsh。详见 docs/superpowers/specs/ 与 plans/。
 
 Currently, two official plugins are available:
 

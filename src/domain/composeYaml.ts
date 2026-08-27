@@ -48,14 +48,10 @@ export function composeToObject(draft: AgentDraft): Record<string, unknown> {
   const triggers = buildTriggers(draft.schedule, draft.timeoutMinutes);
   if (triggers) {
     agent.scheduler = {
-      triggers: triggers.map((t) =>
-        draft.schedule.kind === 'manual'
-          ? t
-          : {
-              ...t,
-              ...(draft.prompt ? { prompt: draft.prompt } : {}),
-            },
-      ),
+      triggers: triggers.map((t) => ({
+        ...t,
+        ...(draft.prompt ? { prompt: draft.prompt } : {}),
+      })),
     };
   }
   if (draft.jupyterEnabled) agent.jupyter = { enabled: true };

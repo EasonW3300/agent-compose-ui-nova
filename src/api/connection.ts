@@ -15,7 +15,10 @@ export function loadConnectionSettings(): ConnectionSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) throw new Error('empty');
     const parsed = JSON.parse(raw) as Partial<ConnectionSettings>;
-    return { baseUrl: parsed.baseUrl ?? '', authToken: parsed.authToken ?? '' };
+    return {
+      baseUrl: typeof parsed.baseUrl === 'string' ? parsed.baseUrl : '',
+      authToken: typeof parsed.authToken === 'string' ? parsed.authToken : '',
+    };
   } catch {
     return { baseUrl: '', authToken: '' };
   }
