@@ -8,6 +8,7 @@ const baseDraft: AgentDraft = {
   prompt: '帮我整理今天的新闻要点',
   schedule: { kind: 'manual' },
   workspace: { kind: 'none' },
+  jupyterEnabled: false,
   volumes: [],
   mcpServers: [],
   skills: [],
@@ -41,7 +42,7 @@ describe('buildTriggers', () => {
     ]);
   });
   it('timeoutMinutes 附着到触发器', () => {
-    expect(buildTriggers({ kind: 'daily', hour: 9, minute: 0 }, 15)[0]).toMatchObject({
+    expect(buildTriggers({ kind: 'daily', hour: 9, minute: 0 }, 15)?.[0]).toMatchObject({
       cron: '0 9 * * *',
       timeout: '15m',
     });
