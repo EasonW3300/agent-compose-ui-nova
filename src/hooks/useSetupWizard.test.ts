@@ -27,6 +27,15 @@ describe('useSetupWizard', () => {
     act(() => result.current.goBack());
     expect(result.current.step).toBe(0);
   });
+  it('支持指定初始步（编辑态直达确认页）', () => {
+    const { result } = renderHook(() => useSetupWizard(5, 4));
+    expect(result.current.step).toBe(4);
+    expect(result.current.isLast).toBe(true);
+    act(() => result.current.goNext()); // 最后一屏不再前进
+    expect(result.current.step).toBe(4);
+    act(() => result.current.goBack());
+    expect(result.current.step).toBe(3);
+  });
   it('goTo 只能跳到已访问过的步（≤ 当前步）', () => {
     const { result } = renderHook(() => useSetupWizard(5));
     act(() => result.current.goTo(3)); // 未访问过，被忽略
