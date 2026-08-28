@@ -45,3 +45,15 @@
 .dash-live--off { color: #9ca3af; }
 .dash-block { margin-bottom: 16px; }
 .dash-block--links { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ===== 运行记录表格 ===== */
+.runs-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.runs-table th, .runs-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+.runs-table thead th { color: #666; font-weight: 600; font-size: 13px; }
+.runs-table tbody tr { cursor: pointer; }
+.runs-table tbody tr:hover { background: #f8fafc; }
+.run-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
+.run-status--running { background: #dbeafe; color: #1e40af; }
+.run-status--succeeded { background: #dcfce7; color: #15803d; }
+.run-status--failed { background: #fee2e2; color: #b91c1c; }
+.run-status--stopped, .run-status--idle { background: #f3f4f6; color: #6b7280; }
