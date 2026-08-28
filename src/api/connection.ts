@@ -2,6 +2,7 @@ import { createClient, Code, ConnectError, type Interceptor } from '@connectrpc/
 import { createConnectTransport } from '@connectrpc/connect-web';
 import { HealthService } from './gen/health/v1/health_pb';
 import { SettingsService } from './gen/agentcompose/v2/agentcompose_pb';
+import { classifyError } from './classify';
 
 export interface ConnectionSettings {
   /** 空 = 走同源 /api 代理；否则为形如 http://127.0.0.1:7410 的绝对地址 */
@@ -34,10 +35,20 @@ export function resolveApiBase(s: ConnectionSettings): string {
   return s.baseUrl.replace(/\/+$/, '');
 }
 
-function authInterceptor(token: string): Interceptor {
+/** 任何受保护 RPC 收到 401 时派发的全局事件；AuthOverlay 订阅它弹出登录浮层（spec §8）。 */
+export const UNAUTHORIZED_EVENT = 'acnova:unauthorized';
+
+export function authInterceptor(token: string): Interceptor {
   return (next) => async (req) => {
     if (token) req.header.set('Authorization', `Bearer ${token}`);
-    return next(req);
+    try {
+      return await next(req);
+    } catch (err) {
+      if (err instanceof ConnectError && err.code === Code.Unauthenticated) {
+        window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
+      }
+      throw err;
+    }
   };
 }
 
@@ -68,7 +79,6 @@ export async function checkAccess(s: ConnectionSettings): Promise<AccessCheck> {
     await client.getGlobalEnv({});
     return 'ok';
   } catch (err) {
-    if (err instanceof ConnectError && err.code === Code.Unauthenticated) return 'invalid';
-    return 'unreachable';
+    return classifyError(err) === 'auth' ? 'invalid' : 'unreachable';
   }
 }

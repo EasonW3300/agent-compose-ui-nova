@@ -1,6 +1,7 @@
-import { Code, ConnectError, createClient } from '@connectrpc/connect';
+import { createClient } from '@connectrpc/connect';
 import { createDaemonTransport, type ConnectionSettings } from './connection';
 import { SettingsService, type EnvVarSpec } from './gen/agentcompose/v2/agentcompose_pb';
+import { classifyError, type ErrorKind } from './classify';
 import type { ProviderKeyEnvVar } from '../domain/providerKeys';
 
 function settingsClient(s: ConnectionSettings) {
@@ -17,10 +18,5 @@ export async function updateGlobalEnv(s: ConnectionSettings, env: ProviderKeyEnv
   return res.env;
 }
 
-export function errorKind(err: unknown): 'auth' | 'unreachable' | 'other' {
-  if (err instanceof ConnectError) {
-    if (err.code === Code.Unauthenticated) return 'auth';
-    if (err.code === Code.Unavailable || err.code === Code.DeadlineExceeded) return 'unreachable';
-  }
-  return 'other';
-}
+// 兼容 ProviderKeysScreen 的既有引用：errorKind 即 classifyError。
+export const errorKind: (err: unknown) => ErrorKind = classifyError;
