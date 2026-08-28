@@ -3,10 +3,10 @@ import { useSetupWizard } from '../hooks/useSetupWizard';
 import { SetupStepIndicator } from './SetupStepIndicator';
 import { SETUP_STEPS } from './setupSteps';
 import { WelcomeScreen } from './WelcomeScreen';
-import { StepPlaceholder } from './StepPlaceholder';
 import { InstallGuideScreen } from './InstallGuideScreen';
 import { LoginScreen } from './LoginScreen';
 import { ProviderKeysScreen } from './ProviderKeysScreen';
+import { CompletionScreen } from './CompletionScreen';
 import './setup.css';
 
 export function SetupShell() {
@@ -24,7 +24,7 @@ export function SetupShell() {
       {step === 1 && <InstallGuideScreen onNext={goNext} />}
       {step === 2 && <LoginScreen onNext={goNext} />}
       {step === 3 && <ProviderKeysScreen onNext={goNext} />}
-      {step === 4 && <StepPlaceholder title={SETUP_STEPS[step]} />}
+      {step === 4 && <CompletionScreen />}
     </main>
   );
 }
