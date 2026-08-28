@@ -78,3 +78,24 @@ export function buildTriggers(
   }
   return [{ name: 'trigger', cron: buildCronExpr(schedule), ...timeout }];
 }
+
+/** 创建向导的初始草稿。 */
+export function emptyDraft(): AgentDraft {
+  return {
+    name: '',
+    displayName: '',
+    description: undefined,
+    provider: 'claude',
+    model: '',
+    prompt: '',
+    systemPrompt: undefined,
+    env: [],
+    schedule: { kind: 'manual' },
+    timeoutMinutes: undefined,
+    workspace: { kind: 'none' },
+    volumes: [],
+    mcpServers: [],
+    skills: [],
+    jupyterEnabled: false,
+  };
+}
