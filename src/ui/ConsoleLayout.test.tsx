@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ConsoleLayout } from './ConsoleLayout';
+import { renderWithClient } from '../test/renderWithClient';
 
 function renderAt(path: string) {
-  return render(
+  return renderWithClient(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/console/:page?" element={<ConsoleLayout />} />

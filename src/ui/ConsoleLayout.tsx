@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { NAV_ITEMS } from './navItems';
+import { AuthOverlay } from './AuthOverlay';
 
 export function ConsoleLayout() {
   const location = useLocation();
@@ -22,6 +23,7 @@ export function ConsoleLayout() {
         </ul>
       </nav>
       <Outlet />
+      <AuthOverlay />
     </div>
   );
 }
