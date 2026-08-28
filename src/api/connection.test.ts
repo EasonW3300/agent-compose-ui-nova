@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fakeTransport = { fake: true };
 const statusMock = vi.fn();
+const getGlobalEnvMock = vi.fn();
 vi.mock('@connectrpc/connect-web', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@connectrpc/connect-web')>();
   return { ...actual, createConnectTransport: vi.fn(() => fakeTransport) };
@@ -12,12 +13,17 @@ vi.mock('@connectrpc/connect', async (importOriginal) => {
     ...actual,
     // createClient(service, transport) -> 我们只关心 HealthService.status
     // （connect-es v2 起为 createClient，v1 的 createPromiseClient 已移除）
-    createClient: vi.fn(() => ({ status: (...a: unknown[]) => statusMock(...a) })),
+    createClient: vi.fn(() => ({
+      status: (...a: unknown[]) => statusMock(...a),
+      getGlobalEnv: (...a: unknown[]) => getGlobalEnvMock(...a),
+    })),
   };
 });
 
+import { Code, ConnectError } from '@connectrpc/connect';
 import { createConnectTransport } from '@connectrpc/connect-web';
 import {
+  checkAccess,
   loadConnectionSettings,
   saveConnectionSettings,
   resolveApiBase,
@@ -28,6 +34,7 @@ import {
 beforeEach(() => {
   localStorage.clear();
   statusMock.mockReset().mockResolvedValue({ version: 'test' });
+  getGlobalEnvMock.mockReset().mockResolvedValue({ env: [] });
 });
 
 describe('连接设置存取', () => {
@@ -65,5 +72,19 @@ describe('probeDaemon', () => {
   it('status 抛错返回 down', async () => {
     statusMock.mockRejectedValueOnce(new Error('boom'));
     expect(await probeDaemon({ baseUrl: '', authToken: '' })).toBe('down');
+  });
+});
+
+describe('checkAccess', () => {
+  it('受保护 RPC 成功返回 ok', async () => {
+    await expect(checkAccess({ baseUrl: '', authToken: '' })).resolves.toBe('ok');
+  });
+  it('401（Unauthenticated）返回 invalid', async () => {
+    getGlobalEnvMock.mockRejectedValueOnce(new ConnectError('denied', Code.Unauthenticated));
+    await expect(checkAccess({ baseUrl: '', authToken: 'bad' })).resolves.toBe('invalid');
+  });
+  it('网络失败返回 unreachable', async () => {
+    getGlobalEnvMock.mockRejectedValueOnce(new Error('boom'));
+    await expect(checkAccess({ baseUrl: '', authToken: '' })).resolves.toBe('unreachable');
   });
 });

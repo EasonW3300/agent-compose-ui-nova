@@ -5,6 +5,7 @@ import { SETUP_STEPS } from './setupSteps';
 import { WelcomeScreen } from './WelcomeScreen';
 import { StepPlaceholder } from './StepPlaceholder';
 import { InstallGuideScreen } from './InstallGuideScreen';
+import { LoginScreen } from './LoginScreen';
 import './setup.css';
 
 export function SetupShell() {
@@ -20,7 +21,8 @@ export function SetupShell() {
       )}
       {step === 0 && <WelcomeScreen onNext={goNext} />}
       {step === 1 && <InstallGuideScreen onNext={goNext} />}
-      {step > 1 && <StepPlaceholder title={SETUP_STEPS[step]} />}
+      {step === 2 && <LoginScreen onNext={goNext} />}
+      {step > 2 && <StepPlaceholder title={SETUP_STEPS[step]} />}
     </main>
   );
 }
