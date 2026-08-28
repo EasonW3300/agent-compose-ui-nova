@@ -57,3 +57,23 @@
 .run-status--succeeded { background: #dcfce7; color: #15803d; }
 .run-status--failed { background: #fee2e2; color: #b91c1c; }
 .run-status--stopped, .run-status--idle { background: #f3f4f6; color: #6b7280; }
+
+/* ===== 运行详情 ===== */
+.run-banner { border-radius: 12px; padding: 16px; margin: 16px 0; color: #fff; display: flex; flex-direction: column; gap: 6px; }
+.run-banner--running { background: #1d4ed8; }
+.run-banner--succeeded { background: #15803d; }
+.run-banner--failed { background: #b91c1c; }
+.run-banner--stopped { background: #6b7280; }
+.run-banner--idle { background: #9ca3af; }
+.run-banner__meta { opacity: 0.9; font-size: 13px; }
+.run-banner__error { background: rgba(255,255,255,.2); border-radius: 6px; padding: 6px 10px; font-size: 13px; word-break: break-word; }
+.run-section { margin-bottom: 24px; }
+.run-section__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.run-section__head h3 { margin: 0; font-size: 16px; }
+.run-section__empty { color: #666; font-size: 13px; }
+.run-logs { background: #0f172a; color: #dbe3f0; border-radius: 8px; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.6; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+.run-events { max-height: 300px; overflow: auto; }
+.run-event { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.run-event__kind { color: #1d4ed8; flex: 0 0 auto; }
+.run-event__time { color: #9ca3af; flex: 0 0 auto; }
+.run-event__text { flex: 1; word-break: break-word; }
