@@ -1,22 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const fakeTransport = { fake: true };
 const statusMock = vi.fn();
 const getGlobalEnvMock = vi.fn();
 vi.mock('@connectrpc/connect-web', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@connectrpc/connect-web')>();
-  return { ...actual, createConnectTransport: vi.fn(() => fakeTransport) };
+  // 保留 options（含 interceptors），让 createClient 的 mock 能流经真实 authInterceptor
+  return { ...actual, createConnectTransport: vi.fn((options: unknown) => ({ ...(options as object) })) };
 });
 vi.mock('@connectrpc/connect', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@connectrpc/connect')>();
   return {
     ...actual,
-    // createClient(service, transport) -> 我们只关心 HealthService.status
+    // createClient(service, transport) -> 模拟 RPC 调用流经 transport 的 interceptor 链
     // （connect-es v2 起为 createClient，v1 的 createPromiseClient 已移除）
-    createClient: vi.fn(() => ({
-      status: (...a: unknown[]) => statusMock(...a),
-      getGlobalEnv: (...a: unknown[]) => getGlobalEnvMock(...a),
-    })),
+    createClient: vi.fn((_service: unknown, transport: { interceptors?: unknown[] }) => {
+      type AnyInterceptor = (
+        next: (req: unknown) => Promise<unknown>,
+      ) => (req: unknown) => Promise<unknown>;
+      const interceptors = (transport?.interceptors ?? []) as AnyInterceptor[];
+      // 依序套上 interceptor，最内层调用 mock 的 status/getGlobalEnv
+      const withInterceptors = (call: () => Promise<unknown>) => {
+        const req = { header: new Headers() };
+        let handler: (r: unknown) => Promise<unknown> = () => Promise.resolve(call());
+        for (const interceptor of interceptors) {
+          handler = interceptor(handler);
+        }
+        return handler(req);
+      };
+      return {
+        status: (...a: unknown[]) => withInterceptors(() => statusMock(...a)),
+        getGlobalEnv: (...a: unknown[]) => withInterceptors(() => getGlobalEnvMock(...a)),
+      };
+    }),
   };
 });
 
@@ -86,5 +101,13 @@ describe('checkAccess', () => {
   it('网络失败返回 unreachable', async () => {
     getGlobalEnvMock.mockRejectedValueOnce(new Error('boom'));
     await expect(checkAccess({ baseUrl: '', authToken: '' })).resolves.toBe('unreachable');
+  });
+  it('401 会派发全局 acnova:unauthorized 事件', async () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    statusMock.mockResolvedValue({});
+    getGlobalEnvMock.mockRejectedValue(new ConnectError('unauth', Code.Unauthenticated));
+    await checkAccess({ baseUrl: '', authToken: 't' });
+    const calls = dispatchSpy.mock.calls.map((c) => (c[0] as Event).type);
+    expect(calls).toContain('acnova:unauthorized');
   });
 });

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
-export function useSetupWizard(totalSteps: number) {
-  const [step, setStep] = useState(0);
+export function useSetupWizard(totalSteps: number, initialStep = 0) {
+  const [step, setStep] = useState(initialStep);
 
   const goNext = useCallback(() => {
     setStep((s) => (s < totalSteps - 1 ? s + 1 : s));

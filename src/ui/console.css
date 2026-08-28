@@ -1,0 +1,36 @@
+.console-page { padding: 24px; max-width: 1080px; }
+.console-page__head { display: flex; align-items: center; justify-content: space-between; }
+.agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
+.agent-card { border: 1px solid var(--ac-border, #d5d5d5); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.agent-card__title { font-weight: 600; }
+.agent-card__meta { color: #666; font-size: 13px; }
+.agent-card__badge { align-self: flex-start; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
+.agent-card__badge--working { background: #dbeafe; color: #1e40af; }
+.agent-card__badge--paused { background: #f3f4f6; color: #6b7280; }
+.agent-card__badge--errored { background: #fee2e2; color: #b91c1c; }
+.agent-card__badge--idle { background: #dcfce7; color: #15803d; }
+.agent-card__actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; z-index: 50; }
+.auth-overlay > div { background: #fff; border-radius: 12px; padding: 24px; width: min(420px, 90vw); display: flex; flex-direction: column; gap: 10px; }
+.auth-overlay__msg--error { color: #b91c1c; }
+.auth-overlay__actions { display: flex; gap: 8px; margin-top: 8px; }
+.wizard-shell { max-width: 760px; margin: 0 auto; padding: 24px; }
+.wizard-steps { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0 0 16px; }
+.wizard-step { flex: 1; }
+.wizard-step__btn { width: 100%; border: 0; background: none; cursor: pointer; text-align: center; font-size: 13px; color: #999; }
+.wizard-step--current .wizard-step__btn { color: #111; font-weight: 600; }
+.wizard-step--done .wizard-step__btn { color: #2563eb; }
+.wizard-step__btn:disabled { cursor: default; }
+
+/* ===== 创建向导表单（步骤 3-4：什么时候干活 / 工作材料） ===== */
+.wizard-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.engine-card { display: flex; align-items: center; gap: 10px; border: 1px solid var(--ac-border, #d5d5d5); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+.engine-card:has(input:checked) { border-color: #0969da; background: #f0f6ff; }
+.engine-card strong { min-width: 6em; }
+.engine-card span { color: #666; font-size: 13px; }
+.wizard-advanced { margin-top: 12px; padding: 12px 14px; border: 1px dashed var(--ac-border, #d5d5d5); border-radius: 12px; background: #fafafa; display: flex; flex-direction: column; gap: 8px; }
+.wizard-advanced h4 { margin: 8px 0 0; font-size: 14px; }
+.env-row, .volume-row, .mcp-row, .skill-row { display: flex; align-items: center; gap: 8px; }
+.task-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.week-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
