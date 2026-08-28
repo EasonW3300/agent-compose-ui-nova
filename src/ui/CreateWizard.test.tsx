@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithClient } from '../test/renderWithClient';
@@ -20,6 +20,11 @@ vi.mock('../api/projects', () => ({
 }));
 vi.mock('../api/connection', () => ({ loadConnectionSettings: () => ({ baseUrl: '', authToken: '' }) }));
 
+function RunDetailStub() {
+  const { runId } = useParams();
+  return <div>run detail {runId}</div>;
+}
+
 function renderWizard(path = '/console/agents/new') {
   return renderWithClient(
     <MemoryRouter initialEntries={[path]}>
@@ -28,6 +33,7 @@ function renderWizard(path = '/console/agents/new') {
         <Route path="/console/agents/:agentName/edit" element={<CreateWizard />} />
         <Route path="/console/agents" element={<div>agents list</div>} />
         <Route path="/console/runs" element={<div>runs list</div>} />
+        <Route path="/console/runs/:runId" element={<RunDetailStub />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -49,7 +55,7 @@ describe('CreateWizard 全流程', () => {
   beforeEach(() => {
     validateProjectMock.mockReset().mockResolvedValue({ valid: true, issues: [] });
     applyProjectMock.mockReset().mockResolvedValue({ applied: true, issues: [], project: { summary: { projectId: 'p1' } } });
-    startAgentRunMock.mockReset().mockResolvedValue({ run: { runId: 'r1' } });
+    startAgentRunMock.mockReset().mockResolvedValue({ runId: 'r1' });
     getProjectMock.mockReset();
   });
   it('新建：走完 5 步，保存先 Validate 再 Apply，然后回到列表', async () => {
@@ -71,7 +77,7 @@ describe('CreateWizard 全流程', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/provider 不支持/));
     expect(applyProjectMock).not.toHaveBeenCalled();
   });
-  it('测试运行一次：Validate+Apply 后调 StartAgentRun 并跳运行记录', async () => {
+  it('测试运行一次：Validate+Apply 后调 StartAgentRun 并跳运行详情', async () => {
     const user = userEvent.setup();
     renderWizard();
     await walkToConfirm(user);
@@ -82,7 +88,7 @@ describe('CreateWizard 全流程', () => {
       { baseUrl: '', authToken: '' },
       { projectId: 'p1', agentName: 'assistant-53aa96', prompt: '整理日志' },
     );
-    await waitFor(() => expect(screen.getByText('runs list')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('run detail r1')).toBeInTheDocument());
   });
   it('编辑：GetProject 回填草稿，标题为「编辑 AI 助手」', async () => {
     // getProject 返回 Project 本体（带 summary/spec 顶层字段），不是包一层 { project }。

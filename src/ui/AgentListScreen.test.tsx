@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom';
 import { QueryClient } from '@tanstack/react-query';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -28,10 +28,18 @@ const card = {
   latestRun: { runId: 'r1', statusLabel: '已完成', at: null },
 };
 
+function RunDetailStub() {
+  const { runId } = useParams();
+  return <div>run detail {runId}</div>;
+}
+
 function renderScreen() {
   return renderWithClient(
     <MemoryRouter initialEntries={['/console/agents']}>
-      <AgentListScreen />
+      <Routes>
+        <Route path="/console/agents" element={<AgentListScreen />} />
+        <Route path="/console/runs/:runId" element={<RunDetailStub />} />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -103,6 +111,15 @@ describe('AgentListScreen', () => {
         { projectId: 'p1', agentName: 'a1', prompt: '帮我写周报' },
       ),
     );
+  });
+  it('立即运行成功后跳运行详情', async () => {
+    useAgentsMock.mockReturnValue({ data: [card], isLoading: false });
+    startAgentRunMock.mockResolvedValue({ runId: 'r9' });
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('我的日报')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /立即运行/ }));
+    await waitFor(() => expect(screen.getByText('run detail r9')).toBeInTheDocument());
   });
   it('暂停/启用传 !enabled（enabled=false 时点「启用」→ 传 true）', async () => {
     const user = userEvent.setup();

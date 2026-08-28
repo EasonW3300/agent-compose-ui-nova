@@ -72,10 +72,10 @@ export function CreateWizard() {
       }
       await queryClient.invalidateQueries({ queryKey: ['agents'] });
       if (runAfter) {
-        // 测试运行一次：先 Apply 拿到 projectId，再 StartAgentRun(source=MANUAL) 并跳运行记录。
+        // 测试运行一次：先 Apply 拿到 projectId，再 StartAgentRun(source=MANUAL) 并跳运行详情。
         const pid = ares.project?.summary?.projectId ?? '';
-        await startAgentRun(s, { projectId: pid, agentName: spec.name, prompt: current.prompt });
-        navigate('/console/runs');
+        const run = await startAgentRun(s, { projectId: pid, agentName: spec.name, prompt: current.prompt });
+        navigate(`/console/runs/${run.runId}`);
       } else {
         navigate('/console/agents');
       }
