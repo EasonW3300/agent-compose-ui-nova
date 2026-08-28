@@ -1300,3 +1300,17 @@ git commit -m "feat: completion screen and finalize setup wizard"
 3. **世界切换不动 App**：在线跳过由 App 层 `useDaemonProbe` 处理（Phase 1 已测），向导不重复实现。
 4. **Phase 2 不做控制台登录浮层**（§8）：控制台页面在 Phase 3 才调 API，届时再实现 401 浮层。
 5. **无新依赖**：复制用 `navigator.clipboard`；样式用原生 CSS（`src/ui/setup.css`），不引入框架。
+
+---
+
+## 执行后附注（2026-08-28，subagent-driven 执行完毕）
+
+**Errata — Task 4 内部不一致（真实计划缺陷，实现期已修正）：** 计划正文要求 `InstallStep.text: string`（必填），但其自身的 command 步骤样例没有 text。实现者按真实语义改为 `text?: string`（command 步骤只带 `code`），并在 `src/domain/install.ts` 补注释说明；task reviewer 判定 minimal + 行为正确。最终评审后确认该偏差是计划缺陷而非实现偏离。
+
+**实现概要：** 7 任务全绿，19 个测试文件 / 77 个测试通过，`tsc -b` build 与 oxlint 零警告；全分支评审（f810331..5cc7120，9 commits）为 "Ready to merge"，修复波后 scoped 复评全部 ADDRESSED、无新破坏。
+
+**遗留 minor（按控制器裁定 defer，进入 Phase 3 时消化）：**
+- `ProviderKeysScreen`/`settings.ts` 的自定义 `ProviderKeyEnvVar` 平行类型：与 gen 的 `EnvVarUpdateSpec` 不漂移的唯一方式是改用 `PartialMessage<EnvVarUpdateSpec>`。代价若错：gen 变更时类型静默漂移。建议 Phase 3 统一 errorKind/AccessCheck 分类器时一并处理。
+- 密钥保存后「已配置」badge 未即时刷新（`updateGlobalEnv` 的 `res.env` 被丢弃）——settings 屏拥有 badge 刷新逻辑时解决。
+- `.login*` / `.key-card*` 样式类未定义（部署样式时落地；标记已在 markup 上）。
+- Task 7 完成屏「每 3 秒自动检查一次」文案未被测试断言（coverage 建议，非缺陷）。
