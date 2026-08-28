@@ -1,17 +1,29 @@
-const STEPS = ['欢迎与图解', '环境自检与安装引导', '首次登录', '密钥配置', '完成'];
+import { useSetupWizard } from '../hooks/useSetupWizard';
+import { SetupStepIndicator } from './SetupStepIndicator';
+import { SETUP_STEPS } from './setupSteps';
+import { WelcomeScreen } from './WelcomeScreen';
+import { InstallGuideScreen } from './InstallGuideScreen';
+import { LoginScreen } from './LoginScreen';
+import { ProviderKeysScreen } from './ProviderKeysScreen';
+import { CompletionScreen } from './CompletionScreen';
+import './setup.css';
 
 export function SetupShell() {
+  const { step, goNext, goBack, goTo } = useSetupWizard(SETUP_STEPS.length);
   return (
     <main className="setup-shell">
       <h1>把 AI 助手装进这台电脑</h1>
-      <ol className="steps">
-        {STEPS.map((step, i) => (
-          <li key={step}>
-            <span>第 {i + 1} 步</span> · <span>{step}</span>
-          </li>
-        ))}
-      </ol>
-      <p className="hint">分步安装向导将在下一个阶段上线。</p>
+      <SetupStepIndicator currentStep={step} onStepClick={goTo} />
+      {step > 0 && (
+        <button type="button" className="setup-back" onClick={goBack}>
+          ← 上一步
+        </button>
+      )}
+      {step === 0 && <WelcomeScreen onNext={goNext} />}
+      {step === 1 && <InstallGuideScreen onNext={goNext} />}
+      {step === 2 && <LoginScreen onNext={goNext} />}
+      {step === 3 && <ProviderKeysScreen onNext={goNext} />}
+      {step === 4 && <CompletionScreen />}
     </main>
   );
 }

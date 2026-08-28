@@ -1,6 +1,7 @@
-import { createClient, type Interceptor } from '@connectrpc/connect';
+import { createClient, Code, ConnectError, type Interceptor } from '@connectrpc/connect';
 import { createConnectTransport } from '@connectrpc/connect-web';
 import { HealthService } from './gen/health/v1/health_pb';
+import { SettingsService } from './gen/agentcompose/v2/agentcompose_pb';
 
 export interface ConnectionSettings {
   /** 空 = 走同源 /api 代理；否则为形如 http://127.0.0.1:7410 的绝对地址 */
@@ -55,5 +56,19 @@ export async function probeDaemon(s: ConnectionSettings): Promise<'ok' | 'down'>
     return 'ok';
   } catch {
     return 'down';
+  }
+}
+
+export type AccessCheck = 'ok' | 'invalid' | 'unreachable';
+
+/** 探测一个受保护的 RPC：成功=密钥可用（或未启用认证）；401=密钥错误；其他=连不上。 */
+export async function checkAccess(s: ConnectionSettings): Promise<AccessCheck> {
+  try {
+    const client = createClient(SettingsService, createDaemonTransport(s));
+    await client.getGlobalEnv({});
+    return 'ok';
+  } catch (err) {
+    if (err instanceof ConnectError && err.code === Code.Unauthenticated) return 'invalid';
+    return 'unreachable';
   }
 }
