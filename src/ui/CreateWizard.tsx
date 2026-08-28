@@ -10,6 +10,8 @@ import { CREATE_STEPS } from './createWizardSteps';
 import { WizardStepBar } from './WizardStepBar';
 import { EngineStep } from './steps/EngineStep';
 import { TaskStep } from './steps/TaskStep';
+import { ScheduleStep } from './steps/ScheduleStep';
+import { MaterialsStep } from './steps/MaterialsStep';
 
 export function CreateWizard() {
   const { agentName } = useParams();
@@ -45,6 +47,8 @@ export function CreateWizard() {
       )}
       {step === 0 && <EngineStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
       {step === 1 && <TaskStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
+      {step === 2 && <ScheduleStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
+      {step === 3 && <MaterialsStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
     </main>
   );
 }
