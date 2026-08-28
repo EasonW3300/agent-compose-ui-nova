@@ -23,6 +23,7 @@ vi.mock('../api/connection', () => ({ loadConnectionSettings: () => ({ baseUrl: 
 const card = {
   key: 'p1:a1', projectId: 'p1', agentName: 'a1', projectName: 'proj',
   displayName: '我的日报', provider: 'claude', status: 'idle', schedulerEnabled: true,
+  enabled: true, prompt: '整理今天的新闻要点',
   nextFireAt: new Date('2026-08-30T09:00:00Z'),
   latestRun: { runId: 'r1', statusLabel: '已完成', at: null },
 };
@@ -83,7 +84,38 @@ describe('AgentListScreen', () => {
     useAgentsMock.mockReturnValue({ data: [card], isLoading: false });
     renderScreen();
     await user.click(screen.getByRole('button', { name: /立即运行/ }));
-    await waitFor(() => expect(startAgentRunMock).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(startAgentRunMock).toHaveBeenCalledWith(
+        { baseUrl: '', authToken: '' },
+        { projectId: 'p1', agentName: 'a1', prompt: '整理今天的新闻要点' },
+      ),
+    );
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['agents'] }));
+  });
+  it('立即运行带上卡片 prompt（手动任务说明不再丢空）', async () => {
+    const user = userEvent.setup();
+    useAgentsMock.mockReturnValue({ data: [{ ...card, prompt: '帮我写周报' }], isLoading: false });
+    renderScreen();
+    await user.click(screen.getByRole('button', { name: /立即运行/ }));
+    await waitFor(() =>
+      expect(startAgentRunMock).toHaveBeenCalledWith(
+        { baseUrl: '', authToken: '' },
+        { projectId: 'p1', agentName: 'a1', prompt: '帮我写周报' },
+      ),
+    );
+  });
+  it('暂停/启用传 !enabled（enabled=false 时点「启用」→ 传 true）', async () => {
+    const user = userEvent.setup();
+    useAgentsMock.mockReturnValue({ data: [{ ...card, enabled: false, schedulerEnabled: true }], isLoading: false });
+    renderScreen();
+    await user.click(screen.getByRole('button', { name: /启用/ }));
+    await waitFor(() =>
+      expect(setAgentEnabledMock).toHaveBeenCalledWith(
+        { baseUrl: '', authToken: '' },
+        { case: 'name', value: 'proj' },
+        'a1',
+        true,
+      ),
+    );
   });
 });

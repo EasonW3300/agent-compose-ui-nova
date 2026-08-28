@@ -136,6 +136,16 @@ describe('projects API', () => {
     const d = await getSchedulerNextFire(s, projectRefByName('proj'), 'a1');
     expect(d?.toISOString()).toBe('2026-08-30T09:00:00.000Z');
   });
+  it('getSchedulerNextFire 首个 enabled trigger 无 nextFireAt 时跳到下一个有值的', async () => {
+    getSchedulerMock.mockResolvedValue({
+      triggers: [
+        { enabled: true, nextFireAt: undefined },
+        { enabled: true, nextFireAt: timestampFromDate(new Date('2026-09-01T08:00:00Z')) },
+      ],
+    });
+    const d = await getSchedulerNextFire(s, projectRefByName('proj'), 'a1');
+    expect(d?.toISOString()).toBe('2026-09-01T08:00:00.000Z');
+  });
   it('getSchedulerNextFire 无 enabled trigger → null', async () => {
     getSchedulerMock.mockResolvedValue({ triggers: [{ enabled: false, nextFireAt: undefined }] });
     await expect(getSchedulerNextFire(s, projectRefByName('proj'), 'a1')).resolves.toBeNull();

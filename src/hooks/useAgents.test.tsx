@@ -49,4 +49,25 @@ describe('useAgents', () => {
     const { result } = renderHook(() => useAgents(), { wrapper });
     await waitFor(() => expect(result.current.data).toEqual([]));
   });
+  it('单个项目 GetProject 失败只跳过该项目，不影响其余卡片', async () => {
+    listProjectsMock.mockResolvedValue([
+      { projectId: 'p1', name: 'proj' },
+      { projectId: 'p2', name: 'broken' },
+    ]);
+    getProjectMock.mockImplementation(async (_s: unknown, ref: { value: string }) =>
+      ref.value === 'p2'
+        ? Promise.reject(new Error('project gone'))
+        : Promise.resolve({
+            summary: { projectId: 'p1', name: 'proj' },
+            agents: [{ agentName: 'a1', provider: 'claude', enabled: true, schedulerEnabled: true, displayName: '小助手', latestRun: undefined, currentRun: undefined }],
+            schedulers: [{ agentName: 'a1' }],
+          }),
+    );
+    getSchedulerNextFireMock.mockResolvedValue(null);
+    const { result } = renderHook(() => useAgents(), { wrapper });
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data![0]).toMatchObject({ projectId: 'p1', agentName: 'a1' });
+    expect(getProjectMock).toHaveBeenCalledTimes(2);
+  });
 });

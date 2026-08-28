@@ -77,10 +77,10 @@ describe('CreateWizard 全流程', () => {
     await walkToConfirm(user);
     await user.click(screen.getByRole('button', { name: /测试运行一次/ }));
     await waitFor(() => expect(startAgentRunMock).toHaveBeenCalled());
-    // Apply 返回的 projectId 作为 Run 的项目引用；slugify('我的机器人') 退化为 'assistant'。
+    // Apply 返回的 projectId 作为 Run 的项目引用；slugify('我的机器人') 退化为确定性唯一 'assistant-53aa96'。
     expect(startAgentRunMock).toHaveBeenCalledWith(
       { baseUrl: '', authToken: '' },
-      { projectId: 'p1', agentName: 'assistant', prompt: '整理日志' },
+      { projectId: 'p1', agentName: 'assistant-53aa96', prompt: '整理日志' },
     );
     await waitFor(() => expect(screen.getByText('runs list')).toBeInTheDocument());
   });

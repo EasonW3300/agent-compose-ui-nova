@@ -42,7 +42,7 @@ export function AgentCard({ card, busy, onRun, onToggleEnabled, onEdit, onLogs, 
           {card.status === 'working' ? '正在运行…' : '立即运行'}
         </button>
         <button type="button" className="setup-btn setup-btn--ghost" disabled={busy} onClick={() => onToggleEnabled(card)}>
-          {card.schedulerEnabled ? '暂停' : '启用'}
+          {card.enabled ? '暂停' : '启用'}
         </button>
         <button type="button" className="setup-btn setup-btn--ghost" onClick={() => onEdit(card)}>编辑</button>
         <button type="button" className="setup-btn setup-btn--ghost" onClick={() => onLogs(card)}>日志</button>

@@ -62,7 +62,22 @@ function draftWorkspaceToSpec(w: WorkspaceDraft): WorkspaceSpec | undefined {
 }
 
 function draftSchedulerToSpec(draft: AgentDraft): SchedulerSpec | undefined {
-  if (draft.schedule.kind === 'manual') return undefined;
+  if (draft.schedule.kind === 'manual') {
+    // 手动触发没有调度，但任务说明（prompt）在 proto 里只挂在 TriggerSpec.prompt 上，
+    // AgentSpec/ProjectAgent 都没有 prompt 字段。用一个禁用掉的 interval 触发器背着 prompt：
+    // enabled=false 永不触发，仅作为 prompt 的持久化载体（编辑回填时能原样读回）。
+    return create(SchedulerSpecSchema, {
+      enabled: false,
+      triggers: [
+        create(TriggerSpecSchema, {
+          name: 'trigger',
+          kind: TriggerKind.INTERVAL,
+          interval: buildIntervalString(60),
+          prompt: draft.prompt,
+        }),
+      ],
+    });
+  }
   const timeout = draft.timeoutMinutes ? { timeout: `${draft.timeoutMinutes}m` } : {};
   const trigger =
     draft.schedule.kind === 'interval'
@@ -119,7 +134,8 @@ export function projectSpecToDraft(spec: ProjectSpec, agentName: string): AgentD
     prompt: trigger?.prompt ?? '',
     systemPrompt: agent.systemPrompt || undefined,
     env: agent.env.map((e) => ({ key: e.name, value: e.value })),
-    schedule: triggerToSchedule(trigger),
+    // 禁用掉的调度器（手动草稿的 prompt 载体）读回成 manual，别被 interval 触发器带偏成定时调度。
+    schedule: agent.scheduler && !agent.scheduler.enabled ? { kind: 'manual' } : triggerToSchedule(trigger),
     timeoutMinutes: timeoutToMinutes(trigger?.timeout),
     workspace: specWorkspaceToDraft(agent.workspace),
     volumes: agent.volumes.map((v) => ({ source: v.source, target: v.target, readOnly: v.readOnly })),

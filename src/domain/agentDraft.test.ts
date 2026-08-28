@@ -22,8 +22,27 @@ describe('slugify', () => {
   it('非法字符折叠为连字符，前后分隔符被修剪', () => {
     expect(slugify('  Daily 报告!!  ')).toBe('daily');
   });
-  it('全非法输入退化为 "assistant"', () => {
-    expect(slugify('###')).toBe('assistant');
+  it('全非法输入退化为确定性唯一的 assistant-<hash>', () => {
+    expect(slugify('###')).toBe('assistant-874c6e');
+  });
+  it('不同中文名产出不同 slug（不再全部撞成 assistant）', () => {
+    const a = slugify('日报助手');
+    const b = slugify('周报助手');
+    const c = slugify('每日新闻整理员');
+    expect(a).toMatch(/^assistant-[0-9a-f]{6}$/);
+    expect(b).toMatch(/^assistant-[0-9a-f]{6}$/);
+    expect(c).toMatch(/^assistant-[0-9a-f]{6}$/);
+    expect(a).not.toBe(b);
+    expect(a).not.toBe(c);
+    expect(b).not.toBe(c);
+  });
+  it('同一中文名哈希稳定（编辑回填可复现同一 slug）', () => {
+    expect(slugify('日报助手')).toBe('assistant-eb9143');
+    expect(slugify('日报助手')).toBe(slugify('日报助手'));
+  });
+  it('拉丁 slug 再 slugify 保持原样（幂等）', () => {
+    const slug = slugify('My Report');
+    expect(slugify(slug)).toBe(slug);
   });
 });
 

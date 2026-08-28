@@ -24,10 +24,10 @@ const draft: AgentDraft = {
 describe('composeToObject', () => {
   it('产出顶层 name 与 agents 映射', () => {
     const obj = composeToObject(draft);
-    // '日报助手' 不含 ASCII 词法 → slugify 退化为 'assistant'，agents 键同名
-    expect(obj.name).toBe('assistant');
+    // '日报助手' 不含 ASCII 词法 → slugify 退化为确定性唯一 'assistant-<hash>'，agents 键同名
+    expect(obj.name).toBe('assistant-eb9143');
     expect(Object.keys((obj as { agents: Record<string, unknown> }).agents)).toEqual([
-      'assistant',
+      'assistant-eb9143',
     ]);
   });
 
@@ -35,7 +35,7 @@ describe('composeToObject', () => {
     const obj = composeToObject(draft) as {
       agents: Record<string, Record<string, unknown>>;
     };
-    const agent = obj.agents.assistant;
+    const agent = obj.agents['assistant-eb9143'];
     expect(agent.display_name).toBe('每日新闻整理员');
     expect(agent.provider).toBe('claude');
     expect(agent.model).toBe('claude-sonnet-5');

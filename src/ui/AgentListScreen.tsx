@@ -19,14 +19,14 @@ export function AgentListScreen() {
   const runMutation = useMutation({
     mutationFn: async (c: AgentCardModel) => {
       const s = loadConnectionSettings();
-      await startAgentRun(s, { projectId: c.projectId, agentName: c.agentName, prompt: '' });
+      await startAgentRun(s, { projectId: c.projectId, agentName: c.agentName, prompt: c.prompt });
     },
     onSuccess: invalidate,
   });
   const toggleMutation = useMutation({
     mutationFn: async (c: AgentCardModel) => {
       const s = loadConnectionSettings();
-      await setAgentEnabled(s, projectRefByName(c.projectName), c.agentName, !c.schedulerEnabled);
+      await setAgentEnabled(s, projectRefByName(c.projectName), c.agentName, !c.enabled);
     },
     onSuccess: invalidate,
   });

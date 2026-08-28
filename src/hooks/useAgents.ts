@@ -11,8 +11,11 @@ export function useAgents() {
     queryFn: async (): Promise<AgentCard[]> => {
       const s = loadConnectionSettings();
       const summaries = await listProjects(s);
+      // 单个项目 GetProject 失败（如已删除）只跳过该项目，不拖垮整个列表。
       const projects = (
-        await Promise.all(summaries.map((p) => getProject(s, projectRefById(p.projectId), true)))
+        await Promise.all(
+          summaries.map((p) => getProject(s, projectRefById(p.projectId), true).catch(() => undefined)),
+        )
       ).filter((p): p is Project => Boolean(p));
       const cards: AgentCard[] = [];
       for (const proj of projects) {

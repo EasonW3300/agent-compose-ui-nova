@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TriggerKind } from '../api/gen/agentcompose/v2/agentcompose_pb';
 import type { AgentDraft } from './agentDraft';
 import {
   draftToProjectSpec,
@@ -64,9 +65,15 @@ describe('draftToProjectSpec', () => {
     expect(itrig.interval).toBe('1h30m');
     expect(itrig.cron).toBe('');
   });
-  it('手动调度不产出 scheduler', () => {
+  it('手动调度产出禁用调度器，只背着任务说明（prompt）', () => {
     const manual: AgentDraft = { ...base, schedule: { kind: 'manual' } };
-    expect(draftToProjectSpec(manual).agents[0].scheduler).toBeUndefined();
+    const agent = draftToProjectSpec(manual).agents[0];
+    expect(agent.scheduler).toBeDefined();
+    expect(agent.scheduler!.enabled).toBe(false);
+    expect(agent.scheduler!.triggers[0]).toMatchObject({
+      kind: TriggerKind.INTERVAL,
+      prompt: '整理今日待办',
+    });
   });
   it('name 为空时用 displayName 兜底', () => {
     const d: AgentDraft = { ...base, name: '', displayName: 'My Bot' };
@@ -92,6 +99,14 @@ describe('projectSpecToDraft', () => {
   it('agent 不存在时抛错', () => {
     const spec = draftToProjectSpec(base);
     expect(() => projectSpecToDraft(spec, 'nope')).toThrow(/not found/);
+  });
+  it('手动调度草稿的 prompt 经 序列化→反解 原样保真（schedule 仍是 manual）', () => {
+    const manual: AgentDraft = { ...base, name: 'Manual Bot', displayName: '手动助手', schedule: { kind: 'manual' } };
+    const spec = draftToProjectSpec(manual);
+    const draft = projectSpecToDraft(spec, 'manual-bot');
+    expect(draft.schedule).toEqual({ kind: 'manual' });
+    expect(draft.prompt).toBe('整理今日待办');
+    expect(draft.displayName).toBe('手动助手');
   });
 });
 

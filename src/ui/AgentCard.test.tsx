@@ -13,6 +13,8 @@ const card: AgentCard = {
   provider: 'claude',
   status: 'idle',
   schedulerEnabled: true,
+  enabled: true,
+  prompt: '整理今天的新闻要点',
   nextFireAt: new Date('2026-08-30T09:00:00Z'),
   latestRun: { runId: 'r1', statusLabel: '已完成', at: new Date('2026-08-29T08:00:00Z') },
 };
@@ -40,5 +42,15 @@ describe('AgentCard', () => {
     expect(handlers.onLogs).toHaveBeenCalledWith(card);
     await user.click(screen.getByRole('button', { name: /删除/ }));
     expect(handlers.onDelete).toHaveBeenCalledWith(card);
+  });
+  it('暂停/启用按钮文案来自 enabled（enabled=false 显示「启用」，即使调度器开着）', () => {
+    render(
+      <AgentCardComp
+        card={{ ...card, enabled: false, schedulerEnabled: true }}
+        onRun={vi.fn()} onToggleEnabled={vi.fn()} onEdit={vi.fn()} onLogs={vi.fn()} onDelete={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /启用/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /暂停/ })).not.toBeInTheDocument();
   });
 });

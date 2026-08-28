@@ -57,7 +57,19 @@ export function slugify(raw: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return cleaned.length > 0 ? cleaned : 'assistant';
+  if (cleaned.length > 0) return cleaned;
+  // 全非法输入（中文等非拉丁）此前一律退化为常量 'assistant'，任何两个中文名都会撞车。
+  // 改用 确定性哈希 兜底：同一输入永远得到同一 slug（编辑回填稳定），不同中文名高概率不冲突。
+  return `assistant-${stableHash(raw)}`;
+}
+
+/** djb2 哈希 → 6 位小写 hex（24 bit）。纯函数、无依赖，只对入参的码点求值。 */
+function stableHash(input: string): string {
+  let h = 5381;
+  for (const ch of input) {
+    h = (h * 33 + (ch.codePointAt(0) ?? 0)) >>> 0;
+  }
+  return (h % 0x1000000).toString(16).padStart(6, '0');
 }
 
 export interface TriggerYamlEntry {

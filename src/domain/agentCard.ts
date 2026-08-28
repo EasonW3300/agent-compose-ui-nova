@@ -43,6 +43,10 @@ export interface AgentCard {
   provider: string;
   status: AgentCardStatus;
   schedulerEnabled: boolean;
+  /** 暂停/启用的真值来源：翻的是 spec.agents[i].enabled（调度开关是另一回事）。 */
+  enabled: boolean;
+  /** 任务说明（读自 spec 的 trigger.prompt，列表页「立即运行」原样带上）。 */
+  prompt: string;
   nextFireAt: Date | null;
   latestRun: { runId: string; statusLabel: string; at: Date | null } | null;
 }
@@ -63,6 +67,9 @@ export function projectToCards(
     provider: a.provider,
     status: agentCardStatus(a),
     schedulerEnabled: a.schedulerEnabled,
+    enabled: a.enabled,
+    prompt:
+      project.spec?.agents.find((s) => s.name === a.agentName)?.scheduler?.triggers[0]?.prompt ?? '',
     nextFireAt: nextFireFor(a),
     latestRun: a.latestRun
       ? { runId: a.latestRun.runId, statusLabel: runStatusLabel(a.latestRun.status), at: a.latestRun.at ? timestampDate(a.latestRun.at) : null }

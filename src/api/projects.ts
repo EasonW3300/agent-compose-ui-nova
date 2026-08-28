@@ -80,14 +80,14 @@ export async function startAgentRun(
   return res.run;
 }
 
-/** 取某 agent 调度器首个 enabled trigger 的 nextFireAt（裁决表 3）。 */
+/** 取某 agent 调度器首个「真正有 nextFireAt 的」enabled trigger（裁决表 3）。 */
 export async function getSchedulerNextFire(
   s: ConnectionSettings,
   ref: ProjectRef,
   agentName: string,
 ): Promise<Date | null> {
   const res = await client(s).getScheduler({ project: ref, agentName });
-  const first = res.triggers.find((t) => t.enabled);
+  const first = res.triggers.find((t) => t.enabled && t.nextFireAt);
   return first?.nextFireAt ? timestampDate(first.nextFireAt) : null;
 }
 

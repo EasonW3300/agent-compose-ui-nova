@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { create, type MessageInitShape } from '@bufbuild/protobuf';
 import {
+  AgentSpecSchema,
   ProjectAgentSchema,
   ProjectSchedulerSchema,
   ProjectSchema,
+  ProjectSpecSchema,
   ProjectSummarySchema,
   RunStatus,
+  SchedulerSpecSchema,
+  TriggerKind,
+  TriggerSpecSchema,
   type Project,
   type ProjectAgent,
 } from '../api/gen/agentcompose/v2/agentcompose_pb';
@@ -105,7 +110,39 @@ describe('projectToCards', () => {
       displayName: '小助手',
       provider: 'claude',
       status: 'idle',
+      schedulerEnabled: true,
+      enabled: true,
+      prompt: '',
     });
     expect(cards[0].nextFireAt?.toISOString()).toBe('2026-08-30T09:00:00.000Z');
+  });
+  it('卡片 enabled 来自 ProjectAgent.enabled（暂停真值来源）', () => {
+    const p = create(ProjectSchema, { ...project, agents: [makeAgent({ enabled: false })] });
+    expect(projectToCards(p, () => null)[0].enabled).toBe(false);
+  });
+  it('卡片 prompt 读自 spec 的 trigger.prompt（手动任务说明保真）', () => {
+    const p = create(ProjectSchema, {
+      ...project,
+      spec: create(ProjectSpecSchema, {
+        name: 'proj',
+        agents: [
+          create(AgentSpecSchema, {
+            name: 'a1',
+            scheduler: create(SchedulerSpecSchema, {
+              enabled: false,
+              triggers: [
+                create(TriggerSpecSchema, {
+                  name: 'trigger',
+                  kind: TriggerKind.INTERVAL,
+                  interval: '1h',
+                  prompt: '整理今天的新闻要点',
+                }),
+              ],
+            }),
+          }),
+        ],
+      }),
+    });
+    expect(projectToCards(p, () => null)[0].prompt).toBe('整理今天的新闻要点');
   });
 });
