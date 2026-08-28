@@ -1,9 +1,12 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useDaemonProbe } from './hooks/useDaemonProbe';
 import { queryClient } from './lib/queryClient';
 import { SetupShell } from './ui/SetupShell';
 import { ConsoleLayout } from './ui/ConsoleLayout';
+import { AgentListScreen } from './ui/AgentListScreen';
+import { CreateWizard } from './ui/CreateWizard';
+import { PagePlaceholder } from './ui/placeholders';
 
 export default function App() {
   const { state } = useDaemonProbe();
@@ -15,7 +18,23 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        {state === 'offline' ? <SetupShell /> : <ConsoleLayout />}
+        {state === 'offline' ? (
+          <SetupShell />
+        ) : (
+          <Routes>
+            <Route path="/" element={<Navigate to="/console" replace />} />
+            <Route path="/console" element={<ConsoleLayout />}>
+              <Route index element={<PagePlaceholder title="首页" note="运行概览在这里（下个阶段）" />} />
+              <Route path="agents" element={<AgentListScreen />} />
+              <Route path="agents/new" element={<CreateWizard />} />
+              <Route path="agents/:agentName/edit" element={<CreateWizard />} />
+              <Route path="runs" element={<PagePlaceholder title="运行记录" note="运行日志与事件时间线在这里（下个阶段）" />} />
+              <Route path="resources" element={<PagePlaceholder title="资源中心" note="工作区/数据文件夹/插件/沙箱在这里（下个阶段）" />} />
+              <Route path="settings" element={<PagePlaceholder title="设置（下个阶段）" note="密钥、全局环境变量与进阶配置在这里" />} />
+              <Route path="*" element={<Navigate to="/console" replace />} />
+            </Route>
+          </Routes>
+        )}
       </BrowserRouter>
     </QueryClientProvider>
   );

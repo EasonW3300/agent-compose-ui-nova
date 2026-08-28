@@ -11,6 +11,11 @@ vi.mock('./api/connection', async (orig) => {
   };
 });
 
+// App 引用真实 AgentListScreen/CreateWizard，它们会触发 useAgents 等网络查询；
+// mock 掉后 App 路由仍照常渲染，只是内容换成 stub 文本。
+vi.mock('./ui/AgentListScreen', () => ({ AgentListScreen: () => <div>AgentListScreen stub</div> }));
+vi.mock('./ui/CreateWizard', () => ({ CreateWizard: () => <div>CreateWizard stub</div> }));
+
 import App from './App';
 
 describe('App 双世界决策', () => {
@@ -42,5 +47,17 @@ describe('App 双世界决策', () => {
     await act(async () => {
       resolveProbe!('ok');
     });
+  });
+  it('在线时 /console/agents 渲染 Agent 列表路由', async () => {
+    window.history.replaceState({}, '', '/console/agents');
+    probeMock.mockResolvedValue('ok');
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('AgentListScreen stub')).toBeInTheDocument());
+  });
+  it('在线时 /console/settings 渲染占位页', async () => {
+    window.history.replaceState({}, '', '/console/settings');
+    probeMock.mockResolvedValue('ok');
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('设置（下个阶段）')).toBeInTheDocument());
   });
 });
