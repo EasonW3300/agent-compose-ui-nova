@@ -43,14 +43,20 @@ export function ConfirmStep({ draft, issues, busy, update, onTestRun, onSave, on
       </dl>
       {issues.length > 0 && (
         <div role="alert" className="confirm-issues">
-          {issues.map((issue, i) => (
-            <p key={i}>
-              {issue.message}
-              <button type="button" className="setup-btn setup-btn--ghost" onClick={() => onJumpTo(issuePathToStep(issue.path))}>
-                回第 {issuePathToStep(issue.path) + 1} 步修改
-              </button>
-            </p>
-          ))}
+          {issues.map((issue, i) => {
+            const targetStep = issuePathToStep(issue.path);
+            return (
+              <p key={i}>
+                {issue.message}
+                {/* 定位不到具体步骤（项目级/name 问题）就停在确认页，隐藏回跳按钮 */}
+                {targetStep < 4 && (
+                  <button type="button" className="setup-btn setup-btn--ghost" onClick={() => onJumpTo(targetStep)}>
+                    回第 {targetStep + 1} 步修改
+                  </button>
+                )}
+              </p>
+            );
+          })}
         </div>
       )}
       <details role="region" aria-label="YAML 预览">

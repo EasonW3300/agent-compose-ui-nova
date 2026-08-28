@@ -50,4 +50,19 @@ describe('ConfirmStep', () => {
     await user.click(screen.getByRole('button', { name: /回第 1 步/ }));
     expect(onJumpTo).toHaveBeenCalledWith(0);
   });
+  it('定位不到具体步骤（项目级问题）时只提示、不显示回跳按钮', () => {
+    render(
+      <ConfirmStep
+        draft={draft}
+        issues={[{ severity: 2, path: 'name', message: '项目名冲突' }]}
+        busy={false}
+        update={vi.fn()}
+        onTestRun={vi.fn()}
+        onSave={vi.fn()}
+        onJumpTo={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(/项目名冲突/);
+    expect(screen.queryByRole('button', { name: /回第/ })).not.toBeInTheDocument();
+  });
 });

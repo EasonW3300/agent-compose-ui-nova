@@ -103,4 +103,30 @@ describe('CreateWizard 全流程', () => {
       true,
     );
   });
+  it('Apply 返回 applied:false（无 issues）时提示保存失败并停在确认页', async () => {
+    applyProjectMock.mockResolvedValue({ applied: false, issues: [], project: undefined });
+    const user = userEvent.setup();
+    renderWizard();
+    await walkToConfirm(user);
+    await user.click(screen.getByRole('button', { name: /保存/ }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/保存失败/));
+    expect(screen.queryByText('agents list')).not.toBeInTheDocument();
+    expect(startAgentRunMock).not.toHaveBeenCalled();
+  });
+  it('保存接口报错时给人话提示并复位 busy（按钮恢复可用）', async () => {
+    applyProjectMock.mockRejectedValue(new Error('network down'));
+    const user = userEvent.setup();
+    renderWizard();
+    await walkToConfirm(user);
+    await user.click(screen.getByRole('button', { name: /保存/ }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/连不上后台服务/));
+    expect(screen.getByRole('button', { name: /保存/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /测试运行一次/ })).toBeEnabled();
+    expect(screen.queryByText('agents list')).not.toBeInTheDocument();
+  });
+  it('编辑：GetProject 返回无 spec（bad 编辑 URL）时提示找不到', async () => {
+    getProjectMock.mockResolvedValue(null);
+    renderWizard('/console/agents/ghost/edit');
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/找不到这个 AI 助手/));
+  });
 });

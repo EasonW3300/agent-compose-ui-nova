@@ -29,7 +29,7 @@ export function CreateWizard() {
   const [issues, setIssues] = useState<ConfirmIssue[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const { data: loaded, isError } = useQuery({
+  const { data: loaded, isError, isSuccess } = useQuery({
     queryKey: ['project-for-edit', agentName],
     queryFn: async () => {
       const s = loadConnectionSettings();
@@ -40,39 +40,49 @@ export function CreateWizard() {
     enabled: editing,
   });
 
-  if (editing && isError) return <p role="alert">找不到这个 AI 助手。</p>;
+  // 编辑态查询落定后仍拿不到 spec（bad 编辑 URL / 项目被删）→ 视为不存在。
+  if (editing && (isError || (isSuccess && loaded === null))) return <p role="alert">找不到这个 AI 助手。</p>;
 
   // 派生当前草稿（避免在 effect 里同步 setState 触发 lint 警告）：未编辑时用回填/空草稿。
   const current = draft ?? loaded ?? emptyDraft();
   const update = (patch: Partial<AgentDraft>) =>
     setDraft((d) => ({ ...(d ?? loaded ?? emptyDraft()), ...patch }));
 
-  /** 保存（可选保存后立即测试运行一次）：Validate → Apply → 成功才跳转。 */
+  /** 保存（可选保存后立即测试运行一次）：Validate → Apply → 成功才跳转；任何异常都复位 busy 并给人话提示。 */
   async function saveAndRun(runAfter: boolean) {
     setBusy(true);
     setIssues([]);
-    const s = loadConnectionSettings();
-    const spec = draftToProjectSpec(current);
-    const vres = await validateProject(s, spec);
-    if (!vres.valid) {
-      setIssues(vres.issues);
+    try {
+      const s = loadConnectionSettings();
+      const spec = draftToProjectSpec(current);
+      const vres = await validateProject(s, spec);
+      if (!vres.valid) {
+        setIssues(vres.issues);
+        return;
+      }
+      const ares = await applyProject(s, spec);
+      // applied:false 且无 issues 时也按失败处理（不能当成成功继续跳转/跑 Run）。
+      if (!ares.applied || ares.issues.length > 0) {
+        setIssues(
+          ares.issues.length > 0
+            ? ares.issues
+            : [{ severity: 2, path: '', message: '保存失败，请稍后再试。' }],
+        );
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['agents'] });
+      if (runAfter) {
+        // 测试运行一次：先 Apply 拿到 projectId，再 StartAgentRun(source=MANUAL) 并跳运行记录。
+        const pid = ares.project?.summary?.projectId ?? '';
+        await startAgentRun(s, { projectId: pid, agentName: spec.name, prompt: current.prompt });
+        navigate('/console/runs');
+      } else {
+        navigate('/console/agents');
+      }
+    } catch {
+      setIssues([{ severity: 2, path: '', message: '连不上后台服务，请检查连接后重试。' }]);
+    } finally {
       setBusy(false);
-      return;
-    }
-    const ares = await applyProject(s, spec);
-    if (ares.issues.length > 0) {
-      setIssues(ares.issues);
-      setBusy(false);
-      return;
-    }
-    await queryClient.invalidateQueries({ queryKey: ['agents'] });
-    if (runAfter) {
-      // 测试运行一次：先 Apply 拿到 projectId，再 StartAgentRun(source=MANUAL) 并跳运行记录。
-      const pid = ares.project?.summary?.projectId ?? '';
-      await startAgentRun(s, { projectId: pid, agentName: spec.name, prompt: current.prompt });
-      navigate('/console/runs');
-    } else {
-      navigate('/console/agents');
     }
   }
 
