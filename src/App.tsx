@@ -1,5 +1,7 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { useDaemonProbe } from './hooks/useDaemonProbe';
+import { queryClient } from './lib/queryClient';
 import { SetupShell } from './ui/SetupShell';
 import { ConsoleLayout } from './ui/ConsoleLayout';
 
@@ -11,8 +13,10 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      {state === 'offline' ? <SetupShell /> : <ConsoleLayout />}
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        {state === 'offline' ? <SetupShell /> : <ConsoleLayout />}
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
