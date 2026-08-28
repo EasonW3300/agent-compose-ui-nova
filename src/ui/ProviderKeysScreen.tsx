@@ -70,6 +70,9 @@ export function ProviderKeysScreen({ onNext }: { onNext: () => void }) {
         <p role="alert" className="login__msg login__msg--error">访问密钥不正确或缺失，密钥未保存。请返回上一步填写访问密钥。</p>
       )}
       {status === 'unreachable' && <p role="alert" className="login__msg login__msg--warn">暂时连不上 agent-compose，密钥未保存。</p>}
+      {status === 'other' && (
+        <p role="alert" className="login__msg login__msg--error">保存失败，请稍后重试。</p>
+      )}
     </section>
   );
 }

@@ -1,4 +1,3 @@
-// src/ui/WelcomeScreen.tsx
 export function WelcomeScreen({ onNext }: { onNext: () => void }) {
   return (
     <section className="welcome" aria-label="欢迎">

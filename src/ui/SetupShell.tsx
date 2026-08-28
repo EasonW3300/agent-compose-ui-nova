@@ -1,4 +1,3 @@
-// src/ui/SetupShell.tsx
 import { useSetupWizard } from '../hooks/useSetupWizard';
 import { SetupStepIndicator } from './SetupStepIndicator';
 import { SETUP_STEPS } from './setupSteps';

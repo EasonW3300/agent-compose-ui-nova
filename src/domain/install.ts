@@ -2,6 +2,7 @@ import type { HostOS } from './os';
 
 export interface InstallStep {
   kind: 'text' | 'command' | 'link';
+  /** 文本可选：'command' 步骤只带 code，没有 text。 */
   text?: string;
   code?: string;
   href?: string;

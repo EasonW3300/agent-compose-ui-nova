@@ -1,4 +1,3 @@
-// src/ui/SetupStepIndicator.tsx
 import { SETUP_STEPS } from './setupSteps';
 
 interface Props {
