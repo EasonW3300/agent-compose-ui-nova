@@ -620,7 +620,7 @@ git commit -m "feat: 运行详情日志时间戳 + 复制"
     });
     renderScreen();
     await waitFor(() => expect(screen.getByText(/退出码 1/)).toBeInTheDocument());
-    expect(screen.getByText('timeout')).toBeInTheDocument();
+    expect(screen.getByText(/timeout/)).toBeInTheDocument();
   });
 
   it('有 payloadJson 的事件可展开载荷', async () => {
@@ -670,10 +670,10 @@ Expected: FAIL（事件区仍是旧数组渲染；`data?.events` undefined → �
 import 增加 gen 类型：
 
 ```tsx
-import type { RunEvent, RunEventKind } from '../api/gen/agentcompose/v2/agentcompose_pb';
+import { RunEventKind, type RunEvent } from '../api/gen/agentcompose/v2/agentcompose_pb';
 ```
 
-事件相关状态（`logs` 声明之后）：
+事件相关状态（⚠️ **TDZ 修正（实现已落地）：** 放 `confirmingStop`/`logEndRef` 声明之后、`runQuery` 之前——`eventsQuery` 替换块里的 `events`/`loadMore` 会读这些 state，若按「`logs` 声明之后」放会被 const 未初始化即用触发 ReferenceError。五个 useState 均无条件、与其它 hooks 顺序无关）：
 
 ```tsx
   const [extraEvents, setExtraEvents] = useState<RunEvent[]>([]);
