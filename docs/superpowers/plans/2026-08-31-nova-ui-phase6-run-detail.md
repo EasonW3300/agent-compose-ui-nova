@@ -345,17 +345,7 @@ vi.mock('../api/runs', () => ({
 }));
 ```
 
-**(b)** `renderScreen` 的 Routes 增加 `/console/runs/:runId` stub（顶部加 helper + 路由）：
-
-```tsx
-function RunDetailStub() {
-  const { runId } = useParams();
-  return <div>run detail {runId}</div>;
-}
-// Routes 里：
-        <Route path="/console/runs/:runId" element={<RunDetailStub />} />
-```
-> import 加 `useParams`。
+**(b)** ⚠️ **计划缺陷修正（实现已落地，见 Ruling）：** 不加 stub 路由。`renderScreen` 既有 `<Route path="/console/runs/:runId" element={<RunDetailScreen />} />`，再增同路径 stub 会被 React Router 首匹配遮蔽（first-match wins），重试 navigate 到 `/console/runs/r2` 后仍是真 RunDetailScreen 渲染，「run detail r2」永远不会出现。改为断言真实导航：runQuery 以 `['run', runId]` 键控，navigate 后 runId 变 'r2' 会重跑 `getRun(s, 'r2')`——测试 1 末尾断言该调用（比 stub marker 更强，验证真实行为）。**去掉** `RunDetailStub` helper、其路由、`useParams` import（test 文件当前未 import useParams，无需加）。
 
 **(c)** `beforeEach` 加：
 
@@ -372,7 +362,7 @@ function RunDetailStub() {
     await waitFor(() => expect(screen.getByRole('button', { name: /重新运行一次/ })).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: /重新运行一次/ }));
     await waitFor(() => expect(retryRunMock).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'r1'));
-    await waitFor(() => expect(screen.getByText('run detail r2')).toBeInTheDocument());
+    await waitFor(() => expect(getRunMock).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'r2'));
   });
 
   it('重新运行失败给提示', async () => {
