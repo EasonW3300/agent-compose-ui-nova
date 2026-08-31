@@ -476,8 +476,10 @@ git commit -m "feat: 运行详情重新运行一次"
 
   it('复制日志把全部文本写入剪贴板并提示已复制', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+    // ⚠️ 修正：user-event 的 setup() 会把 navigator.clipboard 装成 getter-only stub（configurable: true）。
+    // 必须先 setup 再用 defineProperty 覆盖（Object.assign 无法覆盖 getter-only 访问器，且 setup 会整体替换既有 stub）。
     const user = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     renderScreen();
     await waitFor(() => expect(screen.getByRole('button', { name: '复制日志' })).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: '复制日志' }));
@@ -485,7 +487,7 @@ git commit -m "feat: 运行详情重新运行一次"
     await waitFor(() => expect(screen.getByText('已复制')).toBeInTheDocument());
   });
 ```
-> jsdom 的 `navigator.clipboard` 默认 undefined；`Object.assign(navigator, { clipboard })` 注入 stub。既有 `useRunLogsMock` 默认返回的 lines 无 `at`，时间戳用例单独覆盖。
+> ⚠️ **计划缺陷修正（实现已落地）：** jsdom 的 `navigator.clipboard` 默认 undefined，但 `userEvent.setup()`（user-event `attachClipboardStubToView`，Clipboard.js:105-108）会把 `navigator.clipboard` 装成 getter-only 访问器 `{ get: () => stub, configurable: true }`——`Object.assign` 若在其后调用会在 strict 模式抛「has only a getter」；若在其前调用则 setup 会整体替换 stub、`writeText` mock 永不被调。改为 setup 先、`Object.defineProperty(..., { value: { writeText }, configurable: true })` 覆盖（accessor 是 configurable，可替换）。三条断言不变。既有 `useRunLogsMock` 默认返回的 lines 无 `at`，时间戳用例单独覆盖。
 
 - [ ] **Step 2: 跑测试确认红**
 
