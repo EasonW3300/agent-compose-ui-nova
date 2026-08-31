@@ -58,4 +58,8 @@ export const TERMS: Record<string, string> = {
   mcp_server: '插件',
   skill: '技能包',
   sandbox: '隔离工作台',
+  image: '镜像',
+  cache: '缓存',
+  preset: '工作区预设',
+  prune: '清理',
 };
