@@ -66,7 +66,7 @@
 - Consumes: `createClient` / `createDaemonTransport` / `ConnectionSettings`（`src/api/connection.ts`）；`src/api/gen/agentcompose/v2/agentcompose_pb` 的 Service 与类型（见下）。
 - Produces（T3-T7 消费，签名即契约）:
   - `listVolumes(s): Promise<Volume[]>`
-  - `createVolume(s, v: { name: string; driver: string; path: string }): Promise<void>`
+  - `createVolume(s, v: { name: string; driver: string }): Promise<void>`（CreateVolumeRequest 无 path 字段，只有 name/driver/labels/options）
   - `removeVolume(s, name: string): Promise<void>`
   - `pruneVolumes(s): Promise<Volume[]>`
   - `listSandboxes(s): Promise<Sandbox[]>`
@@ -634,7 +634,7 @@ describe('VolumesTab', () => {
     await user.click(screen.getByRole('button', { name: '创建' }));
     await waitFor(() => expect(mocks.createVolume).toHaveBeenCalledWith(
       { baseUrl: '', authToken: '' },
-      { name: 'vol2', driver: 'local', path: '' },
+      { name: 'vol2', driver: 'local' },
     ));
     await waitFor(() => expect(mocks.listVolumes).toHaveBeenCalledTimes(2));
   });
@@ -840,7 +840,7 @@ import type { Volume } from '../api/gen/agentcompose/v2/agentcompose_pb';
 import { DANGEROUS_ACTIONS } from '../domain/resourceView';
 import './console.css';
 
-const EMPTY = { name: '', driver: 'local', path: '' };
+const EMPTY = { name: '', driver: 'local' };
 
 export function VolumesTab() {
   const queryClient = useQueryClient();
@@ -898,7 +898,6 @@ export function VolumesTab() {
             <h3>新建数据卷</h3>
             <label>名称<input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} aria-label="名称" required /></label>
             <label>驱动<input value={draft.driver} onChange={(e) => setDraft({ ...draft, driver: e.target.value })} aria-label="驱动" /></label>
-            <label>路径<input value={draft.path} onChange={(e) => setDraft({ ...draft, path: e.target.value })} aria-label="路径" /></label>
             <div className="auth-overlay__actions">
               <button type="submit" className="setup-btn" disabled={createMutation.isPending || !draft.name.trim()}>创建</button>
               <button type="button" className="setup-btn setup-btn--ghost" onClick={() => setDraft(null)}>取消</button>
