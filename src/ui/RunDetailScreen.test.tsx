@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithClient } from '../test/renderWithClient';
 import { RunEventKind, RunSource, RunStatus } from '../api/gen/agentcompose/v2/agentcompose_pb';
@@ -76,7 +76,8 @@ describe('RunDetailScreen', () => {
     expect(screen.getByText('正在工作')).toBeInTheDocument(); // runStatusLabel(RUNNING)
     expect(screen.getByText('第 1 行')).toBeInTheDocument();   // 日志
     expect(screen.getByText('开始运行')).toBeInTheDocument();  // 事件 text
-    expect(screen.getByText('状态变化')).toBeInTheDocument();  // describeRunEventKind(STATUS)
+    // 事件类型筛选的 option 也会出现「状态变化」，需限定到事件行内断言
+    expect(within(screen.getByText('开始运行').closest('.run-event') as HTMLElement).getByText('状态变化')).toBeInTheDocument(); // describeRunEventKind(STATUS)
   });
   it('非终态显示停止按钮；确认后调 StopRun 并关闭弹层', async () => {
     const user = userEvent.setup();
@@ -141,5 +142,67 @@ describe('RunDetailScreen', () => {
     await user.click(screen.getByRole('button', { name: '复制日志' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('第 1 行'));
     await waitFor(() => expect(screen.getByText('已复制')).toBeInTheDocument());
+  });
+
+  it('事件类型筛选只显示选中类型', async () => {
+    listRunEventsMock.mockReset().mockResolvedValue({
+      events: [
+        { id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.STATUS, text: '开始运行', agent: '', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined },
+        { id: 'e2', runId: 'r1', seq: 2n, kind: RunEventKind.AGENT_MESSAGE, text: '结果', agent: '', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined },
+      ],
+      total: 2,
+      historyAvailable: true,
+    });
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('开始运行')).toBeInTheDocument());
+    await user.selectOptions(screen.getByLabelText('事件类型筛选'), '2');
+    expect(screen.getByText('结果')).toBeInTheDocument();
+    expect(screen.queryByText('开始运行')).not.toBeInTheDocument();
+  });
+
+  it('失败事件显示退出码与 stopReason', async () => {
+    listRunEventsMock.mockReset().mockResolvedValue({
+      events: [{ id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.AGENT_ACTIVITY, text: '出错了', agent: '', name: '', payloadJson: '', success: false, exitCode: 1, stopReason: 'timeout', createdAt: undefined }],
+      total: 1,
+      historyAvailable: true,
+    });
+    renderScreen();
+    await waitFor(() => expect(screen.getByText(/退出码 1/)).toBeInTheDocument());
+    expect(screen.getByText(/timeout/)).toBeInTheDocument();
+  });
+
+  it('有 payloadJson 的事件可展开载荷', async () => {
+    listRunEventsMock.mockReset().mockResolvedValue({
+      events: [{ id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.STATUS, text: '', agent: '', name: '', payloadJson: '{"a":1}', success: true, exitCode: 0, stopReason: '', createdAt: undefined }],
+      total: 1,
+      historyAvailable: true,
+    });
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('载荷')).toBeInTheDocument());
+    await user.click(screen.getByText('载荷'));
+    expect(screen.getByText('{"a":1}')).toBeInTheDocument();
+  });
+
+  it('加载更多：total 大于已加载时点按钮追加分页', async () => {
+    listRunEventsMock
+      .mockReset()
+      .mockResolvedValueOnce({
+        events: [{ id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.STATUS, text: '第一页', agent: '', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined }],
+        total: 3,
+        historyAvailable: true,
+      })
+      .mockResolvedValueOnce({
+        events: [{ id: 'e2', runId: 'r1', seq: 2n, kind: RunEventKind.STATUS, text: '第二页', agent: '', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined }],
+        total: 3,
+        historyAvailable: true,
+      });
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByRole('button', { name: '加载更多' })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: '加载更多' }));
+    await waitFor(() => expect(screen.getByText('第二页')).toBeInTheDocument());
+    expect(listRunEventsMock).toHaveBeenLastCalledWith({ baseUrl: '', authToken: '' }, 'r1', { limit: 20, offset: 1 });
   });
 });

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { timestampDate } from '@bufbuild/protobuf/wkt';
+import { RunEventKind, type RunEvent } from '../api/gen/agentcompose/v2/agentcompose_pb';
 import { loadConnectionSettings } from '../api/connection';
 import { getRun, listRunEvents, retryRun, stopRun } from '../api/runs';
 import { runStatusLabel } from '../domain/agentCard';
@@ -17,6 +18,11 @@ export function RunDetailScreen() {
   const [confirmingStop, setConfirmingStop] = useState(false);
   const [copied, setCopied] = useState(false);
   const logEndRef = useRef<HTMLDivElement | null>(null);
+  const [extraEvents, setExtraEvents] = useState<RunEvent[]>([]);
+  const [noMore, setNoMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [kindFilter, setKindFilter] = useState<'all' | RunEventKind>('all');
 
   const runQuery = useQuery({
     queryKey: ['run', runId],
@@ -25,9 +31,39 @@ export function RunDetailScreen() {
   });
   const eventsQuery = useQuery({
     queryKey: ['run-events', runId],
-    queryFn: () => listRunEvents(s, runId, { limit: 200 }),
+    queryFn: () => listRunEvents(s, runId, { limit: 20 }),
     enabled: Boolean(runId),
   });
+
+  // runId 切换时清掉累积的更多分页与错误态
+  // oxlint-disable react/set-state-in-effect -- extraEvents/noMore/loadMoreError 是按 runId 累积的本地态，runId 变化必须重置
+  useEffect(() => {
+    setExtraEvents([]);
+    setNoMore(false);
+    setLoadMoreError(false);
+  }, [runId]);
+  // oxlint-enable react/set-state-in-effect
+
+  const events = [...(eventsQuery.data?.events ?? []), ...extraEvents];
+  const canLoadMore = Boolean(eventsQuery.data) && (eventsQuery.data?.historyAvailable ?? false) && (eventsQuery.data?.total ?? 0) > events.length && !noMore;
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    setLoadMoreError(false);
+    try {
+      const res = await listRunEvents(s, runId, { limit: 20, offset: events.length });
+      setExtraEvents((prev) => [...prev, ...res.events]);
+      if (res.events.length === 0 || !res.historyAvailable || events.length + res.events.length >= res.total) {
+        setNoMore(true);
+      }
+    } catch {
+      setLoadMoreError(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const visibleEvents = kindFilter === 'all' ? events : events.filter((ev) => ev.kind === kindFilter);
   const logs = useRunLogs(s, runId || null, { tailLines: 200, follow: true, includeMetadata: true });
 
   const stopMutation = useMutation({
@@ -136,18 +172,51 @@ export function RunDetailScreen() {
 
       <div className="run-section">
         <div className="run-section__head"><h3>事件时间线</h3></div>
-        {(eventsQuery.data?.events ?? []).length === 0 ? (
+        {events.length === 0 ? (
           <p className="run-section__empty">暂无事件。</p>
         ) : (
-          <div className="run-events">
-            {(eventsQuery.data?.events ?? []).map((ev) => (
-              <div key={ev.id} className="run-event">
-                <span className="run-event__kind">{describeRunEventKind(ev.kind)}</span>
-                {ev.createdAt && <span className="run-event__time">{formatTime(timestampDate(ev.createdAt))}</span>}
-                {ev.text && <span className="run-event__text">{ev.text}</span>}
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="run-events__toolbar">
+              <label>
+                类型
+                <select aria-label="事件类型筛选" value={kindFilter} onChange={(e) => setKindFilter(e.target.value === 'all' ? 'all' : (Number(e.target.value) as RunEventKind))}>
+                  <option value="all">全部</option>
+                  <option value={RunEventKind.USER_MESSAGE}>你的消息</option>
+                  <option value={RunEventKind.AGENT_MESSAGE}>助手消息</option>
+                  <option value={RunEventKind.AGENT_ACTIVITY}>助手活动</option>
+                  <option value={RunEventKind.STATUS}>状态变化</option>
+                </select>
+              </label>
+            </div>
+            <div className="run-events">
+              {visibleEvents.map((ev) => (
+                <div key={ev.id} className="run-event">
+                  <span className="run-event__kind">{describeRunEventKind(ev.kind)}</span>
+                  {ev.createdAt && <span className="run-event__time">{formatTime(timestampDate(ev.createdAt))}</span>}
+                  {ev.text && <span className="run-event__text">{ev.text}</span>}
+                  {!ev.success && (
+                    <span className="run-event__fail">
+                      {ev.exitCode !== 0 ? `退出码 ${ev.exitCode}` : ''}
+                      {ev.exitCode !== 0 && ev.stopReason ? ' · ' : ''}
+                      {ev.stopReason || ''}
+                    </span>
+                  )}
+                  {ev.payloadJson && (
+                    <details className="run-event__payload">
+                      <summary>载荷</summary>
+                      <pre>{ev.payloadJson}</pre>
+                    </details>
+                  )}
+                </div>
+              ))}
+            </div>
+            {canLoadMore && (
+              <button type="button" className="setup-btn setup-btn--ghost" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? '加载中…' : '加载更多'}
+              </button>
+            )}
+            {loadMoreError && <p className="run-section__empty" role="alert">加载更多失败，请重试。</p>}
+          </>
         )}
       </div>
 
