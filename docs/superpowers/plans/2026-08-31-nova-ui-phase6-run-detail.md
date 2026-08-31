@@ -201,7 +201,7 @@ Expected: PASS。全量 `npx vitest run --testTimeout=30000` 无回归（`getRun
 
 ```bash
 npm run build && npm run lint
-git add src/api/runs.ts src/api/runs.test.ts
+git add src/api/runs.ts src/api/runs.test.ts src/ui/RunDetailScreen.tsx src/ui/RunDetailScreen.test.tsx
 git commit -m "feat: 运行 API（retryRun / listRunEvents 分页 / 日志元数据透传）"
 ```
 
