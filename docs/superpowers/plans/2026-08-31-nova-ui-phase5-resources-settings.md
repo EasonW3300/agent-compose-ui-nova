@@ -1868,7 +1868,8 @@ describe('SchedulerSection', () => {
     mocks.listProjects.mockReset().mockResolvedValue([{ projectId: 'p1' }]);
     mocks.getProject.mockReset().mockResolvedValue({
       summary: { projectId: 'p1', name: 'proj' },
-      agents: [{ name: 'my-report', displayName: '我的日报', scheduler: { enabled: true, intervalMinutes: 90 } }],
+      // AgentSpec 数据在 spec.agents（Project.agents 是 ProjectAgent[]，无 scheduler/name）
+      spec: { agents: [{ name: 'my-report', displayName: '我的日报', scheduler: { enabled: true, intervalMinutes: 90 } }] },
     });
     mocks.getSchedulerNextFire.mockReset().mockResolvedValue(new Date('2026-09-01T09:00:00Z'));
     mocks.listSchedulerEvents.mockReset().mockResolvedValue([
@@ -1910,13 +1911,14 @@ Expected: FAIL。
 `src/ui/GatewaySection.tsx`：
 
 ```tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getCapabilityGatewayConfig, updateCapabilityGatewayConfig } from '../api/settings';
 import { loadConnectionSettings } from '../api/connection';
 import './console.css';
 
 export function GatewaySection() {
-  const s = loadConnectionSettings();
+  // loadConnectionSettings() 每次调用都返回新对象；useMemo 让 effect 依赖 [s] 稳定，避免每次渲染重拉配置
+  const s = useMemo(() => loadConnectionSettings(), []);
   const [addr, setAddr] = useState('');
   const [token, setToken] = useState('');
   const [tokenSet, setTokenSet] = useState(false);
@@ -1989,7 +1991,7 @@ export function SchedulerSection() {
       const rows: { projectId: string; agentName: string; displayName: string; enabled: boolean; nextFireAt: Date | null }[] = [];
       for (const proj of projects) {
         const pid = proj.summary?.projectId ?? '';
-        for (const ag of proj.agents ?? []) {
+        for (const ag of proj.spec?.agents ?? []) {
           const enabled = Boolean(ag.scheduler?.enabled);
           let fire: Date | null = null;
           if (enabled) { try { fire = await getSchedulerNextFire(s, projectRefById(pid), ag.name); } catch { fire = null; } }
@@ -2037,7 +2039,7 @@ export function SchedulerSection() {
   );
 }
 ```
-> `ag.scheduler?.enabled` — AgentSpec 的 scheduler 字段形状以 gen 为准（已核对有 scheduler；tsc 校验字段名）。
+> 调度总览读 `proj.spec?.agents`（AgentSpec[]，getProject includeSpec=true 已填充）而非 `proj.agents`（ProjectAgent[] 无 scheduler/name）。`ag.scheduler?.enabled` 字段已核对（SchedulerSpec.enabled: boolean）。
 
 `src/ui/console.css` 追加：
 
