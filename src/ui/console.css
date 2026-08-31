@@ -86,3 +86,5 @@
 .res-plugin__desc { color: #666; font-size: 13px; margin: 4px 0 0; }
 .res-plugin__methods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .res-plugin__method { background: #f0f6ff; color: #0969da; border-radius: 999px; padding: 2px 10px; font-size: 12px; }
+
+/* ===== 资源中心：沙箱与镜像（复用 runs-table / run-status / run-section__head） ===== */
