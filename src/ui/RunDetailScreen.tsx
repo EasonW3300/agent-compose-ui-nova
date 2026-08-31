@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { timestampDate } from '@bufbuild/protobuf/wkt';
 import { loadConnectionSettings } from '../api/connection';
-import { getRun, listRunEvents, stopRun } from '../api/runs';
+import { getRun, listRunEvents, retryRun, stopRun } from '../api/runs';
 import { runStatusLabel } from '../domain/agentCard';
 import { describeRunEventKind, describeRunSource, formatDuration, formatTime, isRunTerminal, runStatusTone } from '../domain/runView';
 import { useRunLogs } from '../hooks/useRunLogs';
@@ -39,6 +39,14 @@ export function RunDetailScreen() {
     },
   });
 
+  const retryMutation = useMutation({
+    mutationFn: () => retryRun(s, runId),
+    onSuccess: (run) => {
+      queryClient.invalidateQueries({ queryKey: ['runs'] });
+      navigate(`/console/runs/${run.runId}`);
+    },
+  });
+
   // 新日志行到达时自动滚到底。
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ block: 'end' });
@@ -61,7 +69,12 @@ export function RunDetailScreen() {
     <section className="console-page">
       <div className="console-page__head">
         <h2>运行详情</h2>
-        <button type="button" className="setup-btn setup-btn--ghost" onClick={() => navigate('/console/runs')}>返回运行记录</button>
+        <div className="runs-actions">
+          <button type="button" className="setup-btn" onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending}>
+            {retryMutation.isPending ? '正在重新运行…' : '重新运行一次'}
+          </button>
+          <button type="button" className="setup-btn setup-btn--ghost" onClick={() => navigate('/console/runs')}>返回运行记录</button>
+        </div>
       </div>
 
       <div className={`run-banner run-banner--${runStatusTone(summary.status)}`}>
@@ -78,6 +91,8 @@ export function RunDetailScreen() {
         </div>
         {summary.error && <div className="run-banner__error" role="alert">{summary.error}</div>}
       </div>
+
+      {retryMutation.isError && <div className="run-banner__error" role="alert">重新运行失败，请稍后再试。</div>}
 
       {!terminal && (
         <div className="run-section">

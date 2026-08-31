@@ -9,10 +9,12 @@ import { RunDetailScreen } from './RunDetailScreen';
 const getRunMock = vi.fn();
 const listRunEventsMock = vi.fn();
 const stopRunMock = vi.fn();
+const retryRunMock = vi.fn();
 vi.mock('../api/runs', () => ({
   getRun: (...a: unknown[]) => getRunMock(...a),
   listRunEvents: (...a: unknown[]) => listRunEventsMock(...a),
   stopRun: (...a: unknown[]) => stopRunMock(...a),
+  retryRun: (...a: unknown[]) => retryRunMock(...a),
 }));
 vi.mock('../api/connection', () => ({ loadConnectionSettings: () => ({ baseUrl: '', authToken: '' }) }));
 
@@ -50,6 +52,7 @@ describe('RunDetailScreen', () => {
       historyAvailable: true,
     });
     stopRunMock.mockReset().mockResolvedValue(undefined);
+    retryRunMock.mockReset().mockResolvedValue({ ...summary(RunStatus.RUNNING), runId: 'r2', runShortId: 'r2' });
     useRunLogsMock.mockReset().mockReturnValue({
       lines: [{ id: 0, text: '第 1 行' }],
       status: null, connected: true, error: null, reset: vi.fn(),
@@ -91,5 +94,22 @@ describe('RunDetailScreen', () => {
     renderScreen();
     await waitFor(() => expect(screen.getByText('已完成')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /停止这次运行/ })).not.toBeInTheDocument();
+  });
+  it('重新运行一次：调 retryRun 并跳转到新 run 详情', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByRole('button', { name: /重新运行一次/ })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /重新运行一次/ }));
+    await waitFor(() => expect(retryRunMock).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'r1'));
+    await waitFor(() => expect(getRunMock).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'r2'));
+  });
+
+  it('重新运行失败给提示', async () => {
+    retryRunMock.mockReset().mockRejectedValue(new Error('down'));
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByRole('button', { name: /重新运行一次/ })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /重新运行一次/ }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('重新运行失败'));
   });
 });

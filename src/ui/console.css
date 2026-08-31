@@ -103,3 +103,6 @@
 /* ===== 设置 ===== */
 .set-block { margin-bottom: 24px; }
 .set-section { margin-bottom: 24px; }
+
+/* ===== 运行详情增强（Phase 6） ===== */
+.runs-actions { display: flex; align-items: center; gap: 8px; }
