@@ -225,7 +225,7 @@ git commit -m "feat: 运行 API（retryRun / listRunEvents 分页 / 日志元数
 
 - [ ] **Step 1: 写失败测试**
 
-`src/domain/runLog.test.ts` 追加两条（既有 `chunk()` helper 已支持 `over` 覆盖字段，`createdAt` 默认 undefined，既有用例不受影响）：
+`src/domain/runLog.test.ts` 追加两条（既有 `chunk()` helper 已支持 `over` 覆盖字段，`createdAt` 默认 undefined，既有用例不受影响）。⚠️ **strict tsc 修正（实现已落地）：** `over` 参数原为 `Partial<RunLogChunk>`，其 `createdAt?: Timestamp` 要求 `$typeName`，plain `{seconds,nanos}` 过不了 tsc -b（vitest esbuild 剥类型能过，build 门禁不行）。`chunk()` 参数改 `Partial<Omit<Parameters<typeof appendLogChunk>[1], 'createdAt'>> & { createdAt?: unknown }`——测试逐字不变，运行时仍是 plain 对象 + `as RunLogChunk` 断言，`timestampDate` 结构兼容（controller 实测 getTime=1785293700000）。
 
 ```ts
   it('分片带 createdAt 时行带 at（同分片共享时间戳）', () => {
