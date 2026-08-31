@@ -809,7 +809,7 @@ git commit -m "feat: 运行详情事件时间线增强（筛选/分页/失败详
 - Modify: `src/ui/console.css`（追加 `.runs-actions`，若 T3 已加则本任务无 CSS 改动——见 Step 3 注）
 
 **Interfaces:**
-- Consumes: `retryRun`（T1）、`stopRun`（runs.ts 既有）、`isRunTerminal`/`shouldAutoRefreshRuns`（T2，`../domain/runView`）、`runToRow`/`runStatusTone`（既有）。
+- Consumes: `retryRun`（T1）、`stopRun`（runs.ts 既有）、`shouldAutoRefreshRuns`（T2，`../domain/runView`）、`runToRow`/`runStatusTone`（既有；`terminal`/`runShortId` 由 `runToRow` 内部计算，无需直接 import `isRunTerminal`）。
 - Produces: RunsScreen 列「运行 ID / 操作」+ 行内停止（确认弹层）+ 终态行再次运行 + 非终态 5s 自动刷新。
 
 - [ ] **Step 1: 改/写失败测试**
@@ -888,7 +888,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadConnectionSettings } from '../api/connection';
 import { listRuns, retryRun, stopRun } from '../api/runs';
-import { isRunTerminal, runStatusTone, runToRow, shouldAutoRefreshRuns } from '../domain/runView';
+import { runStatusTone, runToRow, shouldAutoRefreshRuns } from '../domain/runView';
 import './console.css';
 
 export function RunsScreen() {
@@ -998,6 +998,7 @@ export function RunsScreen() {
 }
 ```
 > `refetchInterval` 只在有非终态 run 时 5s 轮询；`shouldAutoRefreshRuns` 纯函数已在 T2 单测，此处一行接线由 reviewer 目验，不做 fake-timer 组件测试（jsdom + react-query 定时器易 flake）。`.runs-actions` 已在 T3 追加；若 T3 未执行到，本任务先补上该 CSS 块（同 T3 Step 3）。
+> ⚠️ **计划缺陷修正（实现已落地）：** 本任务组件体用 `r.terminal`（`runToRow` 内部经 `isRunTerminal` 计算，runView.ts:82）与 `shouldAutoRefreshRuns`，**不直接使用** `isRunTerminal`。原 import 含 `isRunTerminal` 会在 strict build（tsc `noUnusedLocals:true`）报 TS6133。已从 import 移除，仅保留 `runStatusTone`/`runToRow`/`shouldAutoRefreshRuns`。`terminal`/`runShortId` 字段由 `runToRow` 提供（runView.ts:73,82），JSX 用法不变。
 
 - [ ] **Step 4: 跑测试确认绿**
 
