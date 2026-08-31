@@ -1610,6 +1610,7 @@ it('无 onNext 时不显示「跳过」按钮', async () => {
 });
 ```
 > ProviderKeysScreen 的既有测试已覆盖 with-onNext 路径；新用例渲染无 onNext 版本。ProviderKeysScreen 渲染不依赖 router，renderWithClient 即可。
+> ⚠️ 本文件当前只用 `render`（@testing-library/react）而没引 `renderWithClient`——新用例要用它，**必须补一行 `import { renderWithClient } from '../test/renderWithClient';`**（否则 tsc Cannot find name）。既有 `render` import 保留（旧用例仍用）。
 
 - [ ] **Step 2: 跑测试确认红**
 
