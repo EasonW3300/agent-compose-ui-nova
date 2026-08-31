@@ -104,11 +104,11 @@ export function RunDetailScreen() {
 
       <div className="run-section">
         <div className="run-section__head"><h3>事件时间线</h3></div>
-        {(eventsQuery.data ?? []).length === 0 ? (
+        {(eventsQuery.data?.events ?? []).length === 0 ? (
           <p className="run-section__empty">暂无事件。</p>
         ) : (
           <div className="run-events">
-            {(eventsQuery.data ?? []).map((ev) => (
+            {(eventsQuery.data?.events ?? []).map((ev) => (
               <div key={ev.id} className="run-event">
                 <span className="run-event__kind">{describeRunEventKind(ev.kind)}</span>
                 {ev.createdAt && <span className="run-event__time">{formatTime(timestampDate(ev.createdAt))}</span>}

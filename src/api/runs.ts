@@ -1,5 +1,6 @@
 import { createClient } from '@connectrpc/connect';
 import { createDaemonTransport, type ConnectionSettings } from './connection';
+import { startAgentRun } from './projects';
 import {
   DashboardService,
   RunService,
@@ -46,18 +47,32 @@ export async function stopRun(
   return res.run;
 }
 
+export interface ListRunEventsResult {
+  events: RunEvent[];
+  total: number;
+  historyAvailable: boolean;
+}
+
 export async function listRunEvents(
   s: ConnectionSettings,
   runId: string,
-  opts: { limit?: number } = {},
-): Promise<RunEvent[]> {
-  const res = await runClient(s).listRunEvents({ runId, limit: opts.limit ?? 200, offset: 0 });
-  return res.events;
+  opts: { limit?: number; offset?: number } = {},
+): Promise<ListRunEventsResult> {
+  const res = await runClient(s).listRunEvents({ runId, limit: opts.limit ?? 200, offset: opts.offset ?? 0 });
+  return { events: res.events, total: res.total, historyAvailable: res.historyAvailable };
+}
+
+/** 用某次运行的项目/助手/原 prompt 重起一次新 run（fire-and-forget）。 */
+export async function retryRun(s: ConnectionSettings, runId: string): Promise<RunSummary> {
+  const detail = await getRun(s, runId);
+  if (!detail?.summary) throw new Error('运行不存在，无法重试');
+  return startAgentRun(s, { projectId: detail.summary.projectId, agentName: detail.summary.agentName, prompt: detail.prompt });
 }
 
 export interface FollowRunLogsOptions {
   tailLines?: number;
   follow?: boolean;
+  includeMetadata?: boolean;
 }
 
 export function followRunLogs(
@@ -74,7 +89,7 @@ export function followRunLogs(
       tailSet: opts.tailLines != null,
       startOffset: 0n,
       follow: opts.follow ?? true,
-      includeMetadata: false,
+      includeMetadata: opts.includeMetadata ?? false,
     },
     signal ? { signal } : undefined,
   );

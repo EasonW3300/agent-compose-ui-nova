@@ -42,9 +42,13 @@ function renderScreen(runId = 'r1') {
 describe('RunDetailScreen', () => {
   beforeEach(() => {
     getRunMock.mockReset().mockResolvedValue({ summary: summary(RunStatus.RUNNING), prompt: '整理日志', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '' });
-    listRunEventsMock.mockReset().mockResolvedValue([
-      { id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.STATUS, text: '开始运行', agent: 'my-report', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined },
-    ]);
+    listRunEventsMock.mockReset().mockResolvedValue({
+      events: [
+        { id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.STATUS, text: '开始运行', agent: 'my-report', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined },
+      ],
+      total: 1,
+      historyAvailable: true,
+    });
     stopRunMock.mockReset().mockResolvedValue(undefined);
     useRunLogsMock.mockReset().mockReturnValue({
       lines: [{ id: 0, text: '第 1 行' }],

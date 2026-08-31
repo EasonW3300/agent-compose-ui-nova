@@ -5,6 +5,7 @@ const getRunMock = vi.fn();
 const stopRunMock = vi.fn();
 const listRunEventsMock = vi.fn();
 const followRunLogsMock = vi.fn();
+const startAgentRunMock = vi.fn();
 const getDashboardOverviewMock = vi.fn();
 const watchDashboardOverviewMock = vi.fn();
 
@@ -36,6 +37,7 @@ vi.mock('@connectrpc/connect', async (importOriginal) => {
         getRun: (...a: unknown[]) => withInterceptors(() => getRunMock(...a)),
         stopRun: (...a: unknown[]) => withInterceptors(() => stopRunMock(...a)),
         listRunEvents: (...a: unknown[]) => withInterceptors(() => listRunEventsMock(...a)),
+        startAgentRun: (...a: unknown[]) => withInterceptors(() => startAgentRunMock(...a)),
         // server-streaming 方法在 connect-web v2 中同步返回 AsyncIterable（非 Promise），
         // 因此不能走 withInterceptors 的 Promise 包裹，需直接透传 mock 的迭代器。
         followRunLogs: (...a: unknown[]) => followRunLogsMock(...a),
@@ -53,6 +55,7 @@ import {
   stopRun,
   listRunEvents,
   followRunLogs,
+  retryRun,
   getDashboardOverview,
   watchDashboardOverview,
 } from './runs';
@@ -71,6 +74,7 @@ describe('runs API', () => {
     stopRunMock.mockReset();
     listRunEventsMock.mockReset().mockResolvedValue({ events: [], total: 0 });
     followRunLogsMock.mockReset();
+    startAgentRunMock.mockReset();
     getDashboardOverviewMock.mockReset();
     watchDashboardOverviewMock.mockReset();
   });
@@ -100,11 +104,11 @@ describe('runs API', () => {
     expect(stopRunMock).toHaveBeenCalledWith({ runId: 'r1', reason: 'user stopped from UI' });
   });
 
-  it('listRunEvents 透传 limit 并返回 res.events', async () => {
-    listRunEventsMock.mockResolvedValue({ events: [{ id: 'e1', runId: 'r1', seq: 1n }], total: 1 });
-    const events = await listRunEvents(s, 'r1', { limit: 50 });
-    expect(events).toEqual([{ id: 'e1', runId: 'r1', seq: 1n }]);
-    expect(listRunEventsMock).toHaveBeenCalledWith({ runId: 'r1', limit: 50, offset: 0 });
+  it('listRunEvents 透传 limit/offset 并返回 { events, total, historyAvailable }', async () => {
+    listRunEventsMock.mockResolvedValue({ events: [{ id: 'e1', runId: 'r1', seq: 1n }], total: 5, historyAvailable: true });
+    const res = await listRunEvents(s, 'r1', { limit: 50, offset: 20 });
+    expect(res).toEqual({ events: [{ id: 'e1', runId: 'r1', seq: 1n }], total: 5, historyAvailable: true });
+    expect(listRunEventsMock).toHaveBeenCalledWith({ runId: 'r1', limit: 50, offset: 20 });
   });
 
   it('followRunLogs 组装请求（tailLines/tailSet/follow）并返回迭代器，signal 透传', async () => {
@@ -129,6 +133,14 @@ describe('runs API', () => {
     );
   });
 
+  it('followRunLogs includeMetadata:true 时透传元数据开关', () => {
+    followRunLogs(s, 'r1', { includeMetadata: true }, undefined);
+    expect(followRunLogsMock).toHaveBeenCalledWith(
+      { runId: 'r1', projectId: '', tailLines: 200, tailSet: false, startOffset: 0n, follow: true, includeMetadata: true },
+      undefined,
+    );
+  });
+
   it('getDashboardOverview 返回 res.overview', async () => {
     getDashboardOverviewMock.mockResolvedValue({ overview: { runs: { runningCount: 1, recentCount: 2, attentionCount: 0 } } });
     expect(await getDashboardOverview(s)).toEqual({ runs: { runningCount: 1, recentCount: 2, attentionCount: 0 } });
@@ -142,5 +154,28 @@ describe('runs API', () => {
     const iter = watchDashboardOverview(s, ac.signal);
     expect(watchDashboardOverviewMock).toHaveBeenCalledWith({}, { signal: ac.signal });
     void iter;
+  });
+
+  it('retryRun 取 detail 后以 projectId/agentName/prompt 再 startAgentRun', async () => {
+    getRunMock.mockResolvedValue({
+      run: {
+        summary: { runId: 'r1', projectId: 'p1', projectName: 'proj', agentName: 'a1', projectRevision: 0n, agentId: '', source: RunSource.MANUAL, schedulerId: '', triggerId: '', status: RunStatus.RUNNING, exitCode: 0, error: '', durationMs: 0n, warnings: [], sandboxId: '', runShortId: 'r1', sandboxShortId: '', schedulerRunId: '' },
+        prompt: '原 prompt', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '',
+      },
+    });
+    startAgentRunMock.mockResolvedValue({
+      run: { runId: 'r2', projectId: 'p1', projectName: 'proj', agentName: 'a1', projectRevision: 0n, agentId: '', source: RunSource.MANUAL, schedulerId: '', triggerId: '', status: RunStatus.RUNNING, exitCode: 0, error: '', durationMs: 0n, warnings: [], sandboxId: '', runShortId: 'r2', sandboxShortId: '', schedulerRunId: '' },
+      warnings: [], started: true,
+    });
+    const run = await retryRun(s, 'r1');
+    expect(run.runId).toBe('r2');
+    expect(startAgentRunMock).toHaveBeenCalledWith({
+      run: { projectId: 'p1', agentName: 'a1', prompt: '原 prompt', source: RunSource.MANUAL },
+    });
+  });
+
+  it('retryRun 找不到 detail 抛人话错误', async () => {
+    getRunMock.mockResolvedValue({ run: undefined });
+    await expect(retryRun(s, 'r1')).rejects.toThrow('运行不存在');
   });
 });
