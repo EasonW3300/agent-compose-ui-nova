@@ -9,7 +9,8 @@ import { CreateWizard } from './ui/CreateWizard';
 import { DashboardScreen } from './ui/DashboardScreen';
 import { RunsScreen } from './ui/RunsScreen';
 import { RunDetailScreen } from './ui/RunDetailScreen';
-import { PagePlaceholder } from './ui/placeholders';
+import { ResourcesScreen } from './ui/ResourcesScreen';
+import { SettingsScreen } from './ui/SettingsScreen';
 
 export default function App() {
   const { state } = useDaemonProbe();
@@ -33,8 +34,8 @@ export default function App() {
               <Route path="agents/:agentName/edit" element={<CreateWizard />} />
               <Route path="runs" element={<RunsScreen />} />
               <Route path="runs/:runId" element={<RunDetailScreen />} />
-              <Route path="resources" element={<PagePlaceholder title="资源中心" note="工作区/数据文件夹/插件/沙箱在这里（下个阶段）" />} />
-              <Route path="settings" element={<PagePlaceholder title="设置（下个阶段）" note="密钥、全局环境变量与进阶配置在这里" />} />
+              <Route path="resources" element={<ResourcesScreen />} />
+              <Route path="settings" element={<SettingsScreen />} />
               <Route path="*" element={<Navigate to="/console" replace />} />
             </Route>
           </Routes>

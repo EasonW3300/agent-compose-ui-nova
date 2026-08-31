@@ -77,3 +77,29 @@
 .run-event__kind { color: #1d4ed8; flex: 0 0 auto; }
 .run-event__time { color: #9ca3af; flex: 0 0 auto; }
 .run-event__text { flex: 1; word-break: break-word; }
+
+.res-capstatus { font-size: 12px; color: #9ca3af; }
+.res-capstatus--ok { color: #15803d; }
+.res-plugin-list { display: flex; flex-direction: column; gap: 8px; }
+.res-plugin { border: 1px solid var(--ac-border, #d5d5d5); border-radius: 8px; padding: 10px 12px; }
+.res-plugin__head { display: flex; justify-content: space-between; align-items: center; width: 100%; border: none; background: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+.res-plugin__desc { color: #666; font-size: 13px; margin: 4px 0 0; }
+.res-plugin__methods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.res-plugin__method { background: #f0f6ff; color: #0969da; border-radius: 999px; padding: 2px 10px; font-size: 12px; }
+
+/* ===== 资源中心：沙箱与镜像（复用 runs-table / run-status / run-section__head） ===== */
+
+/* ===== 资源中心 ===== */
+.res-tabs { display: flex; gap: 8px; border-bottom: 1px solid #eee; margin-bottom: 16px; }
+.res-tab { padding: 8px 16px; border: none; background: none; font-size: 14px; color: #666; cursor: pointer; border-bottom: 2px solid transparent; }
+.res-tab--active { color: #0969da; border-bottom-color: #0969da; font-weight: 600; }
+.res-section { margin-bottom: 24px; }
+
+.set-sch-level { flex: 0 0 auto; font-size: 12px; border-radius: 999px; padding: 1px 8px; }
+.set-sch-level--info { background: #f3f4f6; color: #6b7280; }
+.set-sch-level--warn { background: #fef3c7; color: #92400e; }
+.set-sch-level--error { background: #fee2e2; color: #b91c1c; }
+
+/* ===== 设置 ===== */
+.set-block { margin-bottom: 24px; }
+.set-section { margin-bottom: 24px; }

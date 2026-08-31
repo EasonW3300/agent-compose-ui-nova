@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderWithClient } from '../test/renderWithClient';
 import { ProviderKeysScreen } from './ProviderKeysScreen';
 
 const getGlobalEnvMock = vi.fn();
@@ -45,5 +46,11 @@ describe('ProviderKeysScreen', () => {
     render(<ProviderKeysScreen onNext={onNext} />);
     await user.click(await screen.findByRole('button', { name: /跳过，稍后在设置里配置/ }));
     expect(onNext).toHaveBeenCalled();
+  });
+  it('无 onNext 时不显示「跳过」按钮', async () => {
+    renderWithClient(<ProviderKeysScreen />);
+    // 组件初始 status='loading' 只渲染读取中提示；等 getGlobalEnv resolve 后按钮区才出现
+    await waitFor(() => expect(screen.getByRole('button', { name: /保存密钥/ })).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /跳过/ })).not.toBeInTheDocument();
   });
 });

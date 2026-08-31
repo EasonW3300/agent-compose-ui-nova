@@ -18,6 +18,8 @@ vi.mock('./ui/CreateWizard', () => ({ CreateWizard: () => <div>CreateWizard stub
 vi.mock('./ui/DashboardScreen', () => ({ DashboardScreen: () => <div>DashboardScreen stub</div> }));
 vi.mock('./ui/RunsScreen', () => ({ RunsScreen: () => <div>RunsScreen stub</div> }));
 vi.mock('./ui/RunDetailScreen', () => ({ RunDetailScreen: () => <div>RunDetailScreen stub</div> }));
+vi.mock('./ui/ResourcesScreen', () => ({ ResourcesScreen: () => <div>ResourcesScreen stub</div> }));
+vi.mock('./ui/SettingsScreen', () => ({ SettingsScreen: () => <div>SettingsScreen stub</div> }));
 
 import App from './App';
 
@@ -57,11 +59,17 @@ describe('App 双世界决策', () => {
     render(<App />);
     await waitFor(() => expect(screen.getByText('AgentListScreen stub')).toBeInTheDocument());
   });
-  it('在线时 /console/settings 渲染占位页', async () => {
+  it('在线时 /console/resources 渲染资源中心', async () => {
+    window.history.replaceState({}, '', '/console/resources');
+    probeMock.mockResolvedValue('ok');
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('ResourcesScreen stub')).toBeInTheDocument());
+  });
+  it('在线时 /console/settings 渲染设置', async () => {
     window.history.replaceState({}, '', '/console/settings');
     probeMock.mockResolvedValue('ok');
     render(<App />);
-    await waitFor(() => expect(screen.getByText('设置（下个阶段）')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('SettingsScreen stub')).toBeInTheDocument());
   });
   it('在线时 /console 默认渲染首页 Dashboard', async () => {
     window.history.replaceState({}, '', '/console');
