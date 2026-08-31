@@ -5,7 +5,7 @@ import { applyProviderKeyUpdates, PROVIDER_KEY_DEFS, providerKeyStatus } from '.
 
 type Status = 'loading' | 'idle' | 'saving' | 'saved' | 'auth' | 'unreachable' | 'other';
 
-export function ProviderKeysScreen({ onNext }: { onNext: () => void }) {
+export function ProviderKeysScreen({ onNext }: { onNext?: () => void }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [keyStatus, setKeyStatus] = useState<Record<string, 'configured' | 'missing'>>({});
   const [status, setStatus] = useState<Status>('loading');
@@ -61,9 +61,11 @@ export function ProviderKeysScreen({ onNext }: { onNext: () => void }) {
         <button type="button" className="setup-btn" onClick={save} disabled={status === 'saving'}>
           {status === 'saving' ? '正在保存…' : '保存密钥'}
         </button>
-        <button type="button" className="setup-btn setup-btn--ghost" onClick={onNext}>
-          跳过，稍后在设置里配置
-        </button>
+        {onNext && (
+          <button type="button" className="setup-btn setup-btn--ghost" onClick={onNext}>
+            跳过，稍后在设置里配置
+          </button>
+        )}
       </div>
       {status === 'saved' && <p role="status" className="login__msg login__msg--ok">密钥已保存。</p>}
       {status === 'auth' && (

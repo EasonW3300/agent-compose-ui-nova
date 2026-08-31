@@ -99,3 +99,7 @@
 .set-sch-level--info { background: #f3f4f6; color: #6b7280; }
 .set-sch-level--warn { background: #fef3c7; color: #92400e; }
 .set-sch-level--error { background: #fee2e2; color: #b91c1c; }
+
+/* ===== 设置 ===== */
+.set-block { margin-bottom: 24px; }
+.set-section { margin-bottom: 24px; }
