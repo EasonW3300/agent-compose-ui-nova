@@ -5,7 +5,7 @@ import { timestampDate } from '@bufbuild/protobuf/wkt';
 import { loadConnectionSettings } from '../api/connection';
 import { getRun, listRunEvents, retryRun, stopRun } from '../api/runs';
 import { runStatusLabel } from '../domain/agentCard';
-import { describeRunEventKind, describeRunSource, formatDuration, formatTime, isRunTerminal, runStatusTone } from '../domain/runView';
+import { describeRunEventKind, describeRunSource, formatClockTime, formatDuration, formatTime, isRunTerminal, runStatusTone } from '../domain/runView';
 import { useRunLogs } from '../hooks/useRunLogs';
 import './console.css';
 
@@ -15,6 +15,7 @@ export function RunDetailScreen() {
   const { runId = '' } = useParams();
   const s = loadConnectionSettings();
   const [confirmingStop, setConfirmingStop] = useState(false);
+  const [copied, setCopied] = useState(false);
   const logEndRef = useRef<HTMLDivElement | null>(null);
 
   const runQuery = useQuery({
@@ -27,7 +28,7 @@ export function RunDetailScreen() {
     queryFn: () => listRunEvents(s, runId, { limit: 200 }),
     enabled: Boolean(runId),
   });
-  const logs = useRunLogs(s, runId || null, { tailLines: 200, follow: true });
+  const logs = useRunLogs(s, runId || null, { tailLines: 200, follow: true, includeMetadata: true });
 
   const stopMutation = useMutation({
     mutationFn: async () => {
@@ -51,6 +52,16 @@ export function RunDetailScreen() {
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ block: 'end' });
   }, [logs.lines.length]);
+
+  const copyLogs = async () => {
+    try {
+      await navigator.clipboard.writeText(logs.lines.map((l) => l.text).join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* 剪贴板不可用时静默 */
+    }
+  };
 
   if (runQuery.isLoading) return <div className="console-page" role="status">正在加载运行详情…</div>;
   const detail = runQuery.data;
@@ -103,14 +114,20 @@ export function RunDetailScreen() {
       <div className="run-section">
         <div className="run-section__head">
           <h3>日志</h3>
-          {logs.connected ? <span className="dash-live">实时</span> : <span className="dash-live dash-live--off">{logs.error ?? '已结束'}</span>}
+          <div className="runs-actions">
+            {logs.connected ? <span className="dash-live">实时</span> : <span className="dash-live dash-live--off">{logs.error ?? '已结束'}</span>}
+            <button type="button" className="setup-btn setup-btn--ghost" onClick={copyLogs} disabled={logs.lines.length === 0}>{copied ? '已复制' : '复制日志'}</button>
+          </div>
         </div>
         {logs.lines.length === 0 ? (
           <p className="run-section__empty">还没有日志输出。</p>
         ) : (
           <div className="run-logs" role="log">
             {logs.lines.map((l) => (
-              <div key={l.id}>{l.text}</div>
+              <div key={l.id} className="run-log-line">
+                {l.at && <span className="run-log-time">{formatClockTime(l.at)}</span>}
+                {l.text}
+              </div>
             ))}
             <div ref={logEndRef} />
           </div>

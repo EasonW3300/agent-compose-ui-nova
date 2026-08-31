@@ -112,4 +112,34 @@ describe('RunDetailScreen', () => {
     await user.click(screen.getByRole('button', { name: /重新运行一次/ }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('重新运行失败'));
   });
+
+  it('日志流开启元数据（includeMetadata）', async () => {
+    renderScreen();
+    await waitFor(() => expect(useRunLogsMock).toHaveBeenCalledWith(
+      { baseUrl: '', authToken: '' }, 'r1', { tailLines: 200, follow: true, includeMetadata: true },
+    ));
+  });
+
+  it('日志行渲染 HH:MM:SS 时间戳前缀', async () => {
+    useRunLogsMock.mockReturnValue({
+      lines: [{ id: 0, text: 'hello', at: new Date(2026, 7, 27, 14, 5, 9) }],
+      status: null, connected: true, error: null, reset: vi.fn(),
+    });
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('14:05:09')).toBeInTheDocument());
+    expect(screen.getByText('hello')).toBeInTheDocument();
+  });
+
+  it('复制日志把全部文本写入剪贴板并提示已复制', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    // user-event 的 setup() 会把 navigator.clipboard 装成 getter-only 的 stub（configurable: true）。
+    // 先 setup 再用 defineProperty 覆盖成我们的 mock（Object.assign 无法覆盖 getter-only 访问器）。
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderScreen();
+    await waitFor(() => expect(screen.getByRole('button', { name: '复制日志' })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: '复制日志' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('第 1 行'));
+    await waitFor(() => expect(screen.getByText('已复制')).toBeInTheDocument());
+  });
 });

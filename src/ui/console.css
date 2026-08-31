@@ -106,3 +106,5 @@
 
 /* ===== 运行详情增强（Phase 6） ===== */
 .runs-actions { display: flex; align-items: center; gap: 8px; }
+.run-log-line { white-space: pre-wrap; }
+.run-log-time { color: #64748b; margin-right: 8px; user-select: none; }
