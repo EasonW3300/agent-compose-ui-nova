@@ -1508,6 +1508,11 @@ git commit -m "feat: 沙箱/镜像/缓存 Tab（停止/恢复/移除/清理二�
 `src/ui/SettingsScreen.test.tsx`（mock 四个子组件）：
 
 ```tsx
+import { describe, expect, it, vi } from 'vitest';
+import { screen } from '@testing-library/react';
+import { renderWithClient } from '../test/renderWithClient';
+import { SettingsScreen } from './SettingsScreen';
+
 vi.mock('./ProviderKeysScreen', () => ({ ProviderKeysScreen: () => <div>provider keys</div> }));
 vi.mock('./GlobalEnvSection', () => ({ GlobalEnvSection: () => <div>global env</div> }));
 vi.mock('./GatewaySection', () => ({ GatewaySection: () => <div>gateway</div> }));
@@ -1596,11 +1601,11 @@ describe('GlobalEnvSection', () => {
 `src/ui/ProviderKeysScreen.test.tsx` 追加用例：
 
 ```tsx
-it('无 onNext 时不显示「跳过」按钮', () => {
+it('无 onNext 时不显示「跳过」按钮', async () => {
   renderWithClient(<ProviderKeysScreen />);
-  // getGlobalEnv mock resolve 后
+  // 组件初始 status='loading' 只渲染读取中提示；等 getGlobalEnv resolve 后按钮区才出现
+  await waitFor(() => expect(screen.getByRole('button', { name: /保存密钥/ })).toBeInTheDocument());
   expect(screen.queryByRole('button', { name: /跳过/ })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /保存密钥/ })).toBeInTheDocument();
 });
 ```
 > ProviderKeysScreen 的既有测试已覆盖 with-onNext 路径；新用例渲染无 onNext 版本。ProviderKeysScreen 渲染不依赖 router，renderWithClient 即可。
