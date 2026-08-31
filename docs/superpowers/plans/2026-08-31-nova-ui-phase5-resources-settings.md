@@ -1003,7 +1003,7 @@ vi.mock('../api/projects', () => ({
 }));
 vi.mock('../api/connection', () => ({ loadConnectionSettings: () => ({ baseUrl: '', authToken: '' }) }));
 
-const CATALOG = { capsetId: 'web', name: 'Web 能力', description: '', methods: [{ name: 'fetch', enabled: true }] };
+const CATALOG = { capsetId: 'web', name: 'Web 能力', description: '', methods: [{ methodFullName: 'fetch', enabled: true }] };
 
 describe('PluginLibraryTab', () => {
   beforeEach(() => {
@@ -1016,7 +1016,8 @@ describe('PluginLibraryTab', () => {
     mocks.listProjects.mockReset().mockResolvedValue([{ projectId: 'p1' }]);
     mocks.getProject.mockReset().mockResolvedValue({
       summary: { projectId: 'p1', name: 'proj' },
-      agents: [{ name: 'my-report', displayName: '我的日报', mcpServers: [{ name: 'github' }], skills: ['code'] }],
+      // AgentSpec 数据在 spec.agents（Project.agents 是 ProjectAgent[]，无 name/mcpServers/skills）
+      spec: { agents: [{ name: 'my-report', displayName: '我的日报', mcpServers: [{ name: 'github' }], skills: [{ name: 'code' }] }] },
     });
   });
   it('渲染技能包列表 + 在用汇总', async () => {
@@ -1068,8 +1069,8 @@ export function PluginLibraryTab() {
       ).filter((p): p is NonNullable<typeof p> => Boolean(p));
       const rows: { projectName: string; agentName: string; displayName: string; mcp: string[]; skills: string[] }[] = [];
       for (const proj of projects) {
-        for (const a of proj.agents ?? []) {
-          rows.push({ projectName: proj.summary?.name ?? proj.summary?.projectId ?? '', agentName: a.name, displayName: a.displayName, mcp: a.mcpServers?.map((m) => m.name) ?? [], skills: a.skills ?? [] });
+        for (const a of proj.spec?.agents ?? []) {
+          rows.push({ projectName: proj.summary?.name ?? proj.summary?.projectId ?? '', agentName: a.name, displayName: a.displayName, mcp: a.mcpServers?.map((m) => m.name) ?? [], skills: a.skills?.map((s) => s.name) ?? [] });
         }
       }
       return rows;
@@ -1115,7 +1116,7 @@ export function PluginLibraryTab() {
               {expanded.has(set.id) && (
                 <div className="res-plugin__methods">
                   {(catalogQuery.data?.methods ?? []).map((m) => (
-                    <span key={m.name} className="res-plugin__method">{m.name}</span>
+                    <span key={m.methodFullName} className="res-plugin__method">{m.methodFullName}</span>
                   ))}
                 </div>
               )}
@@ -1149,7 +1150,7 @@ export function PluginLibraryTab() {
 }
 ```
 > 注意 TS 语义：`next.clear(), next.add(id)` 在逗号表达式里合法但 lint 可能报 `no-sequences`。改为两行语句（`next.clear(); next.add(id);`）。`expandedId` 变量若未使用会触发 oxlint 未使用警告 — 直接删掉，catalogQuery 里用 `Array.from(expanded)[0] ?? ''`。
-> `a.mcpServers`/`a.skills`/`a.displayName` 字段名以 gen 中 AgentSpec 为准（tsc -b 校验；已核对 Agent 有 mcp_servers/skills 字段，camelCase 为 mcpServers/skills）。
+> 在用汇总读 `proj.spec?.agents`（ProjectSpec.agents: AgentSpec[]）而非 `proj.agents`（ProjectAgent[] 无 name/mcpServers/skills；getProject 以 includeSpec=true 调用，spec 已填充）。AgentSpec.skills 是 SkillSpec[]（有 name 字段），映射 `s.name`；mcpServers 是 MCPServerSpec[]（有 name 字段）。能力目录方法名用 `m.methodFullName`（CapabilityMethod 无 name 字段）。
 
 `src/ui/console.css` 追加：
 
