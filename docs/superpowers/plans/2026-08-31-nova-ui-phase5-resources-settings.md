@@ -576,8 +576,9 @@ describe('PresetsTab', () => {
   it('删除前必须确认，确认后调 deleteWorkspacePreset', async () => {
     const user = userEvent.setup();
     renderWithClient(<PresetsTab />);
-    await waitFor(() => expect(screen.getByRole('button', { name: '删除' })).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: '删除' }));
+    // mock 有两个预设 → 两个「删除」按钮，getByRole 会多匹配抛错；取第一个（p1）
+    await waitFor(() => expect(screen.getAllByRole('button', { name: '删除' }).length).toBeGreaterThan(0));
+    await user.click(screen.getAllByRole('button', { name: '删除' })[0]);
     expect(mocks.deleteWorkspacePreset).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: '确认删除' }));
     await waitFor(() => expect(mocks.deleteWorkspacePreset).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'p1'));
@@ -958,7 +959,7 @@ Expected: PASS。全量 `--testTimeout=30000` 无回归。
 - [ ] **Step 5: 提交**
 
 ```bash
-git add src/ui/ResourcesScreen.tsx src/ui/ResourcesScreen.test.tsx src/ui/PresetsTab.tsx src/ui/PresetsTab.test.tsx src/ui/VolumesTab.tsx src/ui/VolumesTab.test.tsx src/ui/console.css src/domain/resourceView.ts src/domain/resourceView.test.ts
+git add src/ui/ResourcesScreen.tsx src/ui/ResourcesScreen.test.tsx src/ui/PresetsTab.tsx src/ui/PresetsTab.test.tsx src/ui/VolumesTab.tsx src/ui/VolumesTab.test.tsx src/ui/console.css
 git commit -m "feat: 资源中心壳 + 工作区预设 + 数据卷（列表/新建/删除/清理二次确认）"
 ```
 
