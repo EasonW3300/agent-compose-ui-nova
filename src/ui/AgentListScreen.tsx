@@ -19,9 +19,12 @@ export function AgentListScreen() {
   const runMutation = useMutation({
     mutationFn: async (c: AgentCardModel) => {
       const s = loadConnectionSettings();
-      await startAgentRun(s, { projectId: c.projectId, agentName: c.agentName, prompt: c.prompt });
+      return startAgentRun(s, { projectId: c.projectId, agentName: c.agentName, prompt: c.prompt });
     },
-    onSuccess: invalidate,
+    onSuccess: (run) => {
+      invalidate();
+      navigate(`/console/runs/${run.runId}`);
+    },
   });
   const toggleMutation = useMutation({
     mutationFn: async (c: AgentCardModel) => {

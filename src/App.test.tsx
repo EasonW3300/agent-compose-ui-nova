@@ -15,6 +15,9 @@ vi.mock('./api/connection', async (orig) => {
 // mock 掉后 App 路由仍照常渲染，只是内容换成 stub 文本。
 vi.mock('./ui/AgentListScreen', () => ({ AgentListScreen: () => <div>AgentListScreen stub</div> }));
 vi.mock('./ui/CreateWizard', () => ({ CreateWizard: () => <div>CreateWizard stub</div> }));
+vi.mock('./ui/DashboardScreen', () => ({ DashboardScreen: () => <div>DashboardScreen stub</div> }));
+vi.mock('./ui/RunsScreen', () => ({ RunsScreen: () => <div>RunsScreen stub</div> }));
+vi.mock('./ui/RunDetailScreen', () => ({ RunDetailScreen: () => <div>RunDetailScreen stub</div> }));
 
 import App from './App';
 
@@ -59,5 +62,23 @@ describe('App 双世界决策', () => {
     probeMock.mockResolvedValue('ok');
     render(<App />);
     await waitFor(() => expect(screen.getByText('设置（下个阶段）')).toBeInTheDocument());
+  });
+  it('在线时 /console 默认渲染首页 Dashboard', async () => {
+    window.history.replaceState({}, '', '/console');
+    probeMock.mockResolvedValue('ok');
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('DashboardScreen stub')).toBeInTheDocument());
+  });
+  it('在线时 /console/runs 渲染运行记录', async () => {
+    window.history.replaceState({}, '', '/console/runs');
+    probeMock.mockResolvedValue('ok');
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('RunsScreen stub')).toBeInTheDocument());
+  });
+  it('在线时 /console/runs/:runId 渲染运行详情', async () => {
+    window.history.replaceState({}, '', '/console/runs/r1');
+    probeMock.mockResolvedValue('ok');
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('RunDetailScreen stub')).toBeInTheDocument());
   });
 });
