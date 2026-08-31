@@ -1,8 +1,10 @@
+import { timestampDate } from '@bufbuild/protobuf/wkt';
 import type { RunLogChunk } from '../api/gen/agentcompose/v2/agentcompose_pb';
 
 export interface LogLine {
   id: number;
   text: string;
+  at?: Date;
 }
 
 export interface LogBuffer {
@@ -23,6 +25,11 @@ export function appendLogChunk(buf: LogBuffer, chunk: RunLogChunk): LogBuffer {
   const joined = buf.partial + chunk.data;
   const parts = joined.split('\n');
   const partial = parts.pop() ?? '';
-  const newLines: LogLine[] = parts.map((text, i) => ({ id: buf.nextId + i, text }));
+  const at = chunk.createdAt ? timestampDate(chunk.createdAt) : undefined;
+  const newLines: LogLine[] = parts.map((text, i) => ({
+    id: buf.nextId + i,
+    text,
+    ...(at ? { at } : {}),
+  }));
   return { partial, lines: [...buf.lines, ...newLines], nextId: buf.nextId + newLines.length };
 }
