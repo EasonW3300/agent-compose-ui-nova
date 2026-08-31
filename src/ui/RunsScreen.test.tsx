@@ -7,7 +7,13 @@ import { RunSource, RunStatus } from '../api/gen/agentcompose/v2/agentcompose_pb
 import { RunsScreen } from './RunsScreen';
 
 const listRunsMock = vi.fn();
-vi.mock('../api/runs', () => ({ listRuns: (...a: unknown[]) => listRunsMock(...a) }));
+const stopRunMock = vi.fn();
+const retryRunMock = vi.fn();
+vi.mock('../api/runs', () => ({
+  listRuns: (...a: unknown[]) => listRunsMock(...a),
+  stopRun: (...a: unknown[]) => stopRunMock(...a),
+  retryRun: (...a: unknown[]) => retryRunMock(...a),
+}));
 vi.mock('../api/connection', () => ({ loadConnectionSettings: () => ({ baseUrl: '', authToken: '' }) }));
 
 function summary(over: Record<string, unknown> = {}) {
@@ -33,6 +39,8 @@ function renderScreen() {
 describe('RunsScreen', () => {
   beforeEach(() => {
     listRunsMock.mockReset().mockResolvedValue([summary()]);
+    stopRunMock.mockReset().mockResolvedValue(undefined);
+    retryRunMock.mockReset().mockResolvedValue(summary());
   });
   it('加载中给状态提示', () => {
     listRunsMock.mockReturnValue(new Promise(() => {}));
@@ -72,6 +80,38 @@ describe('RunsScreen', () => {
     renderScreen();
     await waitFor(() => expect(screen.getByText('my-report')).toBeInTheDocument());
     await user.click(screen.getByText('my-report'));
+    await waitFor(() => expect(screen.getByText('run detail')).toBeInTheDocument());
+  });
+  it('运行 ID 列渲染 #shortId', async () => {
+    listRunsMock.mockResolvedValue([summary({ runShortId: 'abc123' })]);
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('#abc123')).toBeInTheDocument());
+  });
+
+  it('运行中行显示停止；确认后调 stopRun 并关闭弹层', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByRole('button', { name: '停止' })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: '停止' }));
+    await user.click(screen.getByRole('button', { name: '确认停止' }));
+    await waitFor(() => expect(stopRunMock).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'r1', expect.stringContaining('stop')));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('停止前不调 stopRun（危险操作先确认）', async () => {
+    renderScreen();
+    await waitFor(() => expect(screen.getByRole('button', { name: '停止' })).toBeInTheDocument());
+    expect(stopRunMock).not.toHaveBeenCalled();
+  });
+
+  it('终态行显示再次运行；点击调 retryRun 并跳转新 run', async () => {
+    listRunsMock.mockResolvedValue([summary({ runId: 'r9', status: RunStatus.SUCCEEDED })]);
+    retryRunMock.mockReset().mockResolvedValue({ ...summary({ runId: 'r9', status: RunStatus.SUCCEEDED }), runId: 'r10', runShortId: 'r10' });
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByRole('button', { name: '再次运行' })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: '再次运行' }));
+    await waitFor(() => expect(retryRunMock).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'r9'));
     await waitFor(() => expect(screen.getByText('run detail')).toBeInTheDocument());
   });
 });
