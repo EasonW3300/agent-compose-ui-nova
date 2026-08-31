@@ -1254,8 +1254,9 @@ describe('SandboxesTab', () => {
   it('移除沙箱二次确认 → removeSandbox', async () => {
     const user = userEvent.setup();
     renderWithClient(<SandboxesTab />);
-    await waitFor(() => expect(screen.getByRole('button', { name: '移除' })).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: '移除' }));
+    // 沙箱/镜像/缓存三行各有「移除」，用 getAllByRole 取第一个（沙箱行）
+    await waitFor(() => expect(screen.getAllByRole('button', { name: '移除' }).length).toBeGreaterThan(0));
+    await user.click(screen.getAllByRole('button', { name: '移除' })[0]);
     expect(mocks.removeSandbox).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: '确认移除' }));
     await waitFor(() => expect(mocks.removeSandbox).toHaveBeenCalledWith(S, 'sb1'));
