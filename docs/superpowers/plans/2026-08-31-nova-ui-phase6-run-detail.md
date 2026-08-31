@@ -29,6 +29,8 @@
 **Files:**
 - Modify: `src/api/runs.ts`
 - Modify: `src/api/runs.test.ts`
+- Modify: `src/ui/RunDetailScreen.tsx`（**契约同步**：仅两处 `eventsQuery.data ?? []` → `eventsQuery.data?.events ?? []`，见 Step 3 注）
+- Modify: `src/ui/RunDetailScreen.test.tsx`（**契约同步**：`beforeEach` 的 `listRunEventsMock` 形状改对象，见 Step 3 注）
 
 **Interfaces:**
 - Consumes: `getRun`（runs.ts 既有）、`startAgentRun`（`src/api/projects.ts` 既有，`startAgentRun(s, { projectId, agentName, prompt })` 返回 `Promise<RunSummary>`）、gen `RunSummary`/`RunEvent`/`RunLogChunk` 类型。
@@ -37,7 +39,7 @@
   - `ListRunEventsResult { events: RunEvent[]; total: number; historyAvailable: boolean }`（export）
   - `listRunEvents(s, runId, opts?: { limit?: number; offset?: number }): Promise<ListRunEventsResult>`
   - `FollowRunLogsOptions` 增加 `includeMetadata?: boolean`（默认 false）；`followRunLogs` 透传给 gen `include_metadata`
-- 消费方预告：T3/T6 用 `retryRun`；T5 用 `listRunEvents` 新形状；T4 用 `followRunLogs` 元数据。
+- 消费方预告：T3/T6 用 `retryRun`；T5 用 `listRunEvents` 新形状（T1 已同步组件消费，T5 聚焦增强）；T4 用 `followRunLogs` 元数据。
 
 - [ ] **Step 1: 改/写失败测试**
 
@@ -79,8 +81,10 @@ const startAgentRunMock = vi.fn();
 ```tsx
   it('retryRun 取 detail 后以 projectId/agentName/prompt 再 startAgentRun', async () => {
     getRunMock.mockResolvedValue({
-      summary: { runId: 'r1', projectId: 'p1', projectName: 'proj', agentName: 'a1', projectRevision: 0n, agentId: '', source: RunSource.MANUAL, schedulerId: '', triggerId: '', status: RunStatus.RUNNING, exitCode: 0, error: '', durationMs: 0n, warnings: [], sandboxId: '', runShortId: 'r1', sandboxShortId: '', schedulerRunId: '' },
-      prompt: '原 prompt', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '',
+      run: {
+        summary: { runId: 'r1', projectId: 'p1', projectName: 'proj', agentName: 'a1', projectRevision: 0n, agentId: '', source: RunSource.MANUAL, schedulerId: '', triggerId: '', status: RunStatus.RUNNING, exitCode: 0, error: '', durationMs: 0n, warnings: [], sandboxId: '', runShortId: 'r1', sandboxShortId: '', schedulerRunId: '' },
+        prompt: '原 prompt', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '',
+      },
     });
     startAgentRunMock.mockResolvedValue({
       run: { runId: 'r2', projectId: 'p1', projectName: 'proj', agentName: 'a1', projectRevision: 0n, agentId: '', source: RunSource.MANUAL, schedulerId: '', triggerId: '', status: RunStatus.RUNNING, exitCode: 0, error: '', durationMs: 0n, warnings: [], sandboxId: '', runShortId: 'r2', sandboxShortId: '', schedulerRunId: '' },
@@ -92,6 +96,8 @@ const startAgentRunMock = vi.fn();
       run: { projectId: 'p1', agentName: 'a1', prompt: '原 prompt', source: RunSource.MANUAL },
     });
   });
+```
+> `getRun` wrapper 返回 `res.run`（RPC 响应形状），mock 必须包 `run:`——此处已修正（此前版本漏包，属计划缺陷，已同步）。
 
   it('retryRun 找不到 detail 抛人话错误', async () => {
     getRunMock.mockResolvedValue(undefined);
@@ -168,6 +174,23 @@ export async function retryRun(s: ConnectionSettings, runId: string): Promise<Ru
   return startAgentRun(s, { projectId: detail.summary.projectId, agentName: detail.summary.agentName, prompt: detail.prompt });
 }
 ```
+
+**契约同步（必须同 commit，否则 tsc -b 全 src 红）：** `listRunEvents` 换返回对象后，`RunDetailScreen.tsx` 仍消费旧数组形状。最小修复两处：
+
+`src/ui/RunDetailScreen.tsx` 事件渲染区块两处 `(eventsQuery.data ?? [])` 改为 `(eventsQuery.data?.events ?? [])`（`.length === 0` 判断处 + `.map` 处）。
+
+`src/ui/RunDetailScreen.test.tsx` `beforeEach` 的 `listRunEventsMock.mockResolvedValue([...])` 改为返回对象：
+
+```tsx
+    listRunEventsMock.mockReset().mockResolvedValue({
+      events: [
+        { id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.STATUS, text: '开始运行', agent: 'my-report', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined },
+      ],
+      total: 1,
+      historyAvailable: true,
+    });
+```
+> 既有「渲染标题/状态标签/日志行/事件时间线」用例断言 `开始运行`/`状态变化` 在新形状下仍通过。此后 T5 的 Step 1(a) 已冗余，跳过。
 
 - [ ] **Step 4: 跑测试确认绿**
 
@@ -576,17 +599,7 @@ git commit -m "feat: 运行详情日志时间戳 + 复制"
 
 `src/ui/RunDetailScreen.test.tsx`：
 
-**(a)** `beforeEach` 的 `listRunEventsMock` 形状改为返回对象：
-
-```tsx
-    listRunEventsMock.mockReset().mockResolvedValue({
-      events: [
-        { id: 'e1', runId: 'r1', seq: 1n, kind: RunEventKind.STATUS, text: '开始运行', agent: 'my-report', name: '', payloadJson: '', success: true, exitCode: 0, stopReason: '', createdAt: undefined },
-      ],
-      total: 1,
-      historyAvailable: true,
-    });
-```
+**(a)** `beforeEach` 的 `listRunEventsMock` 对象形状**已在 T1 契约同步中改好**（`{ events: [...], total: 1, historyAvailable: true }`）——本任务跳过，直接确认现有形状即可。
 
 **(b)** 追加四条用例：
 
