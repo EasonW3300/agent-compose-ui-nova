@@ -12,6 +12,7 @@ import {
   type ProjectSpec,
   type ProjectSummary,
   type RunSummary,
+  type SchedulerEvent,
 } from './gen/agentcompose/v2/agentcompose_pb';
 
 function client(s: ConnectionSettings) {
@@ -36,6 +37,11 @@ export function projectRefById(projectId: string): ProjectRef {
 export async function listProjects(s: ConnectionSettings): Promise<ProjectSummary[]> {
   const res = await client(s).listProjects({});
   return res.projects;
+}
+
+export async function listSchedulerEvents(s: ConnectionSettings, opts: { limit?: number } = {}): Promise<SchedulerEvent[]> {
+  const res = await client(s).listSchedulerEvents({ limit: opts.limit ?? 100, offset: 0 });
+  return res.events;
 }
 
 export async function getProject(
