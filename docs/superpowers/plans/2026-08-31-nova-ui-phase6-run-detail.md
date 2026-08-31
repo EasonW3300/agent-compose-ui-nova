@@ -103,7 +103,6 @@ const startAgentRunMock = vi.fn();
     getRunMock.mockResolvedValue(undefined);
     await expect(retryRun(s, 'r1')).rejects.toThrow('运行不存在');
   });
-```
 
 `runs.test.ts` 顶部 import 增加 `retryRun`。`beforeEach` 给 `startAgentRunMock.mockReset()`。
 
