@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { RunStatus } from '../api/gen/agentcompose/v2/agentcompose_pb';
 import { appendLogChunk, createLogBuffer } from './runLog';
 
-function chunk(data: string, over: Partial<Parameters<typeof appendLogChunk>[1]> = {}) {
+function chunk(
+  data: string,
+  over: Partial<Omit<Parameters<typeof appendLogChunk>[1], 'createdAt'>> & { createdAt?: unknown } = {},
+) {
   return {
     data, offset: 0n, isFinal: false, runStatus: RunStatus.RUNNING, prompt: '',
     ...over,
@@ -48,5 +51,19 @@ describe('runLog 累积', () => {
     buf = appendLogChunk(buf, chunk('a\n'));
     expect(buf.lines.map((l) => l.text)).toEqual(['a']);
     expect(buf.partial).toBe('');
+  });
+
+  it('分片带 createdAt 时行带 at（同分片共享时间戳）', () => {
+    let buf = createLogBuffer();
+    const created = { seconds: 1785293700n, nanos: 0 };
+    buf = appendLogChunk(buf, chunk('a\nb\n', { createdAt: created }));
+    expect(buf.lines.map((l) => l.at?.getTime())).toEqual([1785293700000, 1785293700000]);
+    expect(buf.lines[0].at).toBeInstanceOf(Date);
+  });
+
+  it('无 createdAt 时行不设 at', () => {
+    let buf = createLogBuffer();
+    buf = appendLogChunk(buf, chunk('a\n'));
+    expect(buf.lines[0].at).toBeUndefined();
   });
 });

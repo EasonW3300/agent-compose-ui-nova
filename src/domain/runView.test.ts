@@ -4,11 +4,13 @@ import { RunEventKind, RunSource, RunStatus, RunSummarySchema } from '../api/gen
 import {
   describeRunEventKind,
   describeRunSource,
+  formatClockTime,
   formatDuration,
   formatTime,
   isRunTerminal,
   runStatusTone,
   runToRow,
+  shouldAutoRefreshRuns,
 } from './runView';
 
 function summary(over: MessageInitShape<typeof RunSummarySchema> = {}): Parameters<typeof runToRow>[0] {
@@ -81,5 +83,16 @@ describe('runView', () => {
     expect(isRunTerminal(RunStatus.RUNNING)).toBe(false);
     expect(isRunTerminal(RunStatus.PENDING)).toBe(false);
     expect(isRunTerminal(RunStatus.UNSPECIFIED)).toBe(false);
+  });
+
+  it('formatClockTime 输出 HH:MM:SS（本地时区）', () => {
+    expect(formatClockTime(new Date(2026, 7, 27, 14, 5, 9))).toBe('14:05:09');
+  });
+
+  it('shouldAutoRefreshRuns：有非终态即 true，全终态 false', () => {
+    expect(shouldAutoRefreshRuns([{ status: RunStatus.RUNNING }])).toBe(true);
+    expect(shouldAutoRefreshRuns([{ status: RunStatus.SUCCEEDED }, { status: RunStatus.PENDING }])).toBe(true);
+    expect(shouldAutoRefreshRuns([{ status: RunStatus.SUCCEEDED }, { status: RunStatus.FAILED }])).toBe(false);
+    expect(shouldAutoRefreshRuns([])).toBe(false);
   });
 });

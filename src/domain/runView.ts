@@ -99,3 +99,14 @@ export function formatTime(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+
+/** 日志行时间戳：HH:MM:SS（本地时区）。 */
+export function formatClockTime(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/** 运行列表是否值得自动刷新：存在任一非终态 run。 */
+export function shouldAutoRefreshRuns(runs: Pick<RunSummary, 'status'>[]): boolean {
+  return runs.some((r) => !isRunTerminal(r.status));
+}
