@@ -42,6 +42,16 @@
 .wizard-step--current .wizard-step__btn { color: var(--ac-accent); border-color: color-mix(in srgb, var(--ac-accent) 38%, transparent); background: color-mix(in srgb, var(--ac-accent) 8%, transparent); font-weight: 650; }
 .wizard-step--done .wizard-step__btn { color: var(--ac-text); }
 .wizard-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.env-section__head { display: flex; align-items: center; gap: 8px; }
+.env-section__head h4 { margin: 0; }
+.env-help { position: relative; display: inline-grid; width: 20px; height: 20px; place-items: center; padding: 0; border: 1px solid var(--ac-border-strong); border-radius: 50%; color: var(--ac-text-muted); background: var(--ac-surface); cursor: help; font-size: 12px; font-weight: 700; line-height: 1; }
+.env-help__tooltip { position: absolute; z-index: 2; top: calc(100% + 8px); left: 0; width: min(320px, 74vw); padding: 10px 12px; border-radius: 8px; color: var(--ac-accent-foreground); background: var(--ac-text); box-shadow: var(--ac-shadow-8); font-size: 12px; font-weight: 400; line-height: 1.5; text-align: left; opacity: 0; pointer-events: none; transform: translateY(-2px); transition: opacity .16s ease, transform .16s ease; visibility: hidden; }
+.env-help:hover .env-help__tooltip, .env-help:focus-visible .env-help__tooltip { opacity: 1; transform: translateY(0); visibility: visible; }
+.env-section__hint { margin: 0 0 14px; color: var(--ac-text-muted); font-size: 13px; }
+.env-section__hint code { display: inline-block; margin: 3px 4px 0 0; padding: 2px 6px; border-radius: 4px; color: var(--ac-text); background: var(--ac-surface); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.env-row { align-items: flex-end; }
+.env-row__field { min-width: 0; flex: 1 1 0; }
+.env-row__field > span { color: var(--ac-text-muted); font-size: 12px; font-weight: 600; }
 .engine-card { border-color: var(--ac-border); color: var(--ac-text); background: var(--ac-surface); }
 .engine-card input[type='radio'] { width: 16px; min-height: 16px; height: 16px; flex: 0 0 16px; margin: 0; padding: 0; accent-color: var(--ac-accent); appearance: auto; }
 .engine-card:has(input:checked) { border-color: var(--ac-accent); background: color-mix(in srgb, var(--ac-accent) 7%, transparent); }
