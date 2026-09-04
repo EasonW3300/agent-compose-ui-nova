@@ -61,6 +61,7 @@ describe('CreateWizard 全流程', () => {
   it('新建：走完 5 步，保存先 Validate 再 Apply，然后回到列表', async () => {
     const user = userEvent.setup();
     renderWizard();
+    expect(document.querySelector('.wizard-shell__panel')).toBeInTheDocument();
     await walkToConfirm(user);
     expect(screen.getByText('我的机器人')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /保存/ }));

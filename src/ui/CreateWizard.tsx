@@ -14,6 +14,8 @@ import { ScheduleStep } from './steps/ScheduleStep';
 import { MaterialsStep } from './steps/MaterialsStep';
 import { ConfirmStep, type ConfirmIssue } from './steps/ConfirmStep';
 
+// Project APIs retain the existing validate, save, and test-run workflow while this component owns only wizard presentation state.
+// The draft converters keep the UI model and daemon project specification aligned at the save boundary.
 export function CreateWizard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -88,26 +90,28 @@ export function CreateWizard() {
 
   return (
     <main className="wizard-shell">
-      <h1>{editing ? '编辑 AI 助手' : '新建 AI 助手'}</h1>
-      <WizardStepBar steps={CREATE_STEPS} currentStep={step} onStepClick={goTo} />
-      {step > 0 && (
-        <button type="button" className="setup-back" onClick={goBack}>← 上一步</button>
-      )}
-      {step === 0 && <EngineStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
-      {step === 1 && <TaskStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
-      {step === 2 && <ScheduleStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
-      {step === 3 && <MaterialsStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
-      {step === 4 && (
-        <ConfirmStep
-          draft={current}
-          issues={issues}
-          busy={busy}
-          update={update}
-          onJumpTo={goTo}
-          onTestRun={() => void saveAndRun(true)}
-          onSave={() => void saveAndRun(false)}
-        />
-      )}
+      <div className="wizard-shell__panel">
+        <h1>{editing ? '编辑 AI 助手' : '新建 AI 助手'}</h1>
+        <WizardStepBar steps={CREATE_STEPS} currentStep={step} onStepClick={goTo} />
+        {step > 0 && (
+          <button type="button" className="setup-back" onClick={goBack}>← 上一步</button>
+        )}
+        {step === 0 && <EngineStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
+        {step === 1 && <TaskStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
+        {step === 2 && <ScheduleStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
+        {step === 3 && <MaterialsStep draft={current} update={update} goNext={goNext} goBack={goBack} />}
+        {step === 4 && (
+          <ConfirmStep
+            draft={current}
+            issues={issues}
+            busy={busy}
+            update={update}
+            onJumpTo={goTo}
+            onTestRun={() => void saveAndRun(true)}
+            onSave={() => void saveAndRun(false)}
+          />
+        )}
+      </div>
     </main>
   );
 }
