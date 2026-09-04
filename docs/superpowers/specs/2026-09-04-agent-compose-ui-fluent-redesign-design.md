@@ -66,3 +66,11 @@ Theme strategy:
 - Run the existing Vitest suite, lint, and production build.
 - Manually inspect the setup flow, dashboard, agents, create wizard, runs, resources, and settings at desktop and mobile widths.
 - Check both light and dark system themes, keyboard focus, dialog actions, and destructive-action confirmation paths.
+
+### Completed checks
+
+- `npm test`: 55 test files and 287 tests passed.
+- `npm run lint`: passed with no warnings.
+- `npm run build`: passed. Vite reports its standard advisory that the current production JavaScript bundle exceeds 500 kB after minification.
+- Browser inspection at 1280px confirmed the 248px navigation rail and a 1032px main content area. At 390px, the navigation becomes horizontal and the dashboard cards become a single column without document-width overflow.
+- Browser inspection with an emulated dark system preference confirmed Fluent token colors switch to a dark canvas and surface palette. The environment was restored to the default light preference afterward.

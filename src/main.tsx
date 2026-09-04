@@ -6,7 +6,7 @@ import App from './App.tsx';
 
 // FluentProvider supplies the official Fluent design tokens consumed by the CSS visual layer.
 // The media-query listener keeps the application aligned with the user's system theme preference.
-function ThemedRoot() {
+export function ThemedRoot() {
   const query = '(prefers-color-scheme: dark)';
   const [dark, setDark] = useState(() => window.matchMedia(query).matches);
 
