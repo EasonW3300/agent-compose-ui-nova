@@ -14,7 +14,6 @@ import {
   TriggerSpecSchema,
   VolumeMountSpecSchema,
   WorkspaceSpecSchema,
-  TriggerKind,
   type MCPServerSpec,
   type ProjectSpec,
   type SchedulerSpec,
@@ -66,12 +65,12 @@ function draftSchedulerToSpec(draft: AgentDraft): SchedulerSpec | undefined {
     // 手动触发没有调度，但任务说明（prompt）在 proto 里只挂在 TriggerSpec.prompt 上，
     // AgentSpec/ProjectAgent 都没有 prompt 字段。用一个禁用掉的 interval 触发器背着 prompt：
     // enabled=false 永不触发，仅作为 prompt 的持久化载体（编辑回填时能原样读回）。
+    // 触发器类型由 interval 字段推断；不要传 kind 枚举，否则当前服务端会把其文本值当未知字段。
     return create(SchedulerSpecSchema, {
       enabled: false,
       triggers: [
         create(TriggerSpecSchema, {
           name: 'trigger',
-          kind: TriggerKind.INTERVAL,
           interval: buildIntervalString(60),
           prompt: draft.prompt,
         }),
@@ -83,14 +82,12 @@ function draftSchedulerToSpec(draft: AgentDraft): SchedulerSpec | undefined {
     draft.schedule.kind === 'interval'
       ? create(TriggerSpecSchema, {
           name: 'trigger',
-          kind: TriggerKind.INTERVAL,
           interval: buildIntervalString(draft.schedule.minutes),
           prompt: draft.prompt,
           ...timeout,
         })
       : create(TriggerSpecSchema, {
           name: 'trigger',
-          kind: TriggerKind.CRON,
           cron: buildCronExpr(draft.schedule),
           prompt: draft.prompt,
           ...timeout,
@@ -157,10 +154,11 @@ export function projectSpecToDraft(spec: ProjectSpec, agentName: string): AgentD
 
 function triggerToSchedule(trigger?: TriggerSpec): ScheduleInput {
   if (!trigger) return { kind: 'manual' };
-  if (trigger.kind === TriggerKind.INTERVAL && trigger.interval) {
+  // 服务端以实际的 cron / interval 字段表达触发器类型；同时兼容未返回 kind 的项目配置。
+  if (trigger.interval) {
     return { kind: 'interval', minutes: parseIntervalToMinutes(trigger.interval) };
   }
-  if (trigger.kind === TriggerKind.CRON && trigger.cron) {
+  if (trigger.cron) {
     return parseCronToSchedule(trigger.cron);
   }
   return { kind: 'manual' };
