@@ -6,6 +6,8 @@ import { listRuns, retryRun, stopRun } from '../api/runs';
 import { runStatusTone, runToRow, shouldAutoRefreshRuns } from '../domain/runView';
 import './console.css';
 
+// The run APIs preserve the existing query and mutation behavior while this screen only changes presentation.
+// runToRow and runStatusTone convert daemon data into the display values and semantic status treatment below.
 export function RunsScreen() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -58,40 +60,42 @@ export function RunsScreen() {
       {rows.length === 0 ? (
         <p>还没有运行记录。去「我的 AI 助手」点「立即运行」，第一个结果就会出现在这里。</p>
       ) : (
-        <table className="runs-table">
-          <thead>
-            <tr>
-              <th>AI 助手</th>
-              <th>运行 ID</th>
-              <th>来源</th>
-              <th>状态</th>
-              <th>耗时</th>
-              <th>开始时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.key} onClick={() => navigate(`/console/runs/${r.runId}`)}>
-                <td>{r.agentName}</td>
-                <td>#{r.runShortId}</td>
-                <td>{r.sourceLabel}</td>
-                <td>
-                  <span className={`run-status run-status--${runStatusTone(r.status)}`}>{r.statusLabel}</span>
-                </td>
-                <td>{r.durationText}</td>
-                <td>{r.startedText}</td>
-                <td>
-                  {!r.terminal ? (
-                    <button type="button" className="setup-btn setup-btn--ghost" onClick={(e) => { e.stopPropagation(); setStoppingId(r.runId); }}>停止</button>
-                  ) : (
-                    <button type="button" className="setup-btn setup-btn--ghost" onClick={(e) => { e.stopPropagation(); retryMutation.mutate(r.runId); }} disabled={retryMutation.isPending}>再次运行</button>
-                  )}
-                </td>
+        <div className="runs-table-wrap">
+          <table className="runs-table">
+            <thead>
+              <tr>
+                <th>AI 助手</th>
+                <th>运行 ID</th>
+                <th>来源</th>
+                <th>状态</th>
+                <th>耗时</th>
+                <th>开始时间</th>
+                <th>操作</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.key} onClick={() => navigate(`/console/runs/${r.runId}`)}>
+                  <td>{r.agentName}</td>
+                  <td>#{r.runShortId}</td>
+                  <td>{r.sourceLabel}</td>
+                  <td>
+                    <span className={`run-status run-status--${runStatusTone(r.status)}`}>{r.statusLabel}</span>
+                  </td>
+                  <td>{r.durationText}</td>
+                  <td>{r.startedText}</td>
+                  <td>
+                    {!r.terminal ? (
+                      <button type="button" className="setup-btn setup-btn--ghost" onClick={(e) => { e.stopPropagation(); setStoppingId(r.runId); }}>停止</button>
+                    ) : (
+                      <button type="button" className="setup-btn setup-btn--ghost" onClick={(e) => { e.stopPropagation(); retryMutation.mutate(r.runId); }} disabled={retryMutation.isPending}>再次运行</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {stoppingRow && (
