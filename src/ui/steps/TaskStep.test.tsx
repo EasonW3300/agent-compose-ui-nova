@@ -42,4 +42,19 @@ describe('TaskStep', () => {
     await user.type(screen.getAllByLabelText('变量值')[0], 'Asia/Shanghai');
     expect(update).toHaveBeenCalledWith({ env: [{ key: 'TZ', value: 'Asia/Shanghai' }] });
   });
+  it('解释当前助手的环境变量并展示示例', async () => {
+    const user = userEvent.setup();
+    render(<TaskStepHarness onUpdate={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: /高级设置/ }));
+    await user.click(screen.getByRole('button', { name: /加一个环境变量/ }));
+
+    expect(screen.getAllByText('变量名')).not.toHaveLength(0);
+    expect(screen.getAllByText('变量值')).not.toHaveLength(0);
+    expect(screen.getByRole('button', { name: '查看环境变量说明' })).toBeInTheDocument();
+    expect(screen.getByText(/通常无需填写/)).toBeInTheDocument();
+    expect(screen.getByText('TZ=Asia/Shanghai')).toBeInTheDocument();
+    expect(screen.getByText('LANG=zh_CN.UTF-8')).toBeInTheDocument();
+    expect(screen.getByText('HTTPS_PROXY=http://proxy.example:8080')).toBeInTheDocument();
+  });
 });

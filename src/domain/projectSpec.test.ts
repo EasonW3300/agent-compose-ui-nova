@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { TriggerKind } from '../api/gen/agentcompose/v2/agentcompose_pb';
+import { toJson } from '@bufbuild/protobuf';
+// `toJson` mirrors Connect 的 ProtoJSON 请求体，用于断言默认枚举不会被发送给服务端。
+import { ProjectSpecSchema, TriggerKind } from '../api/gen/agentcompose/v2/agentcompose_pb';
 import type { AgentDraft } from './agentDraft';
 import {
   draftToProjectSpec,
@@ -57,11 +59,20 @@ describe('draftToProjectSpec', () => {
   it('daily/weekly/interval 三种调度映射成 cron/interval trigger + prompt + timeout', () => {
     const daily = draftToProjectSpec(base).agents[0].scheduler!;
     expect(daily.enabled).toBe(true);
-    expect(daily.triggers[0]).toMatchObject({ name: 'trigger', cron: '30 9 * * *', timeout: '90m', prompt: '整理今日待办' });
+    expect(daily.triggers[0]).toMatchObject({
+      name: 'trigger',
+      kind: TriggerKind.UNSPECIFIED,
+      cron: '30 9 * * *',
+      timeout: '90m',
+      prompt: '整理今日待办',
+    });
+    const requestJson = JSON.stringify(toJson(ProjectSpecSchema, draftToProjectSpec(base)));
+    expect(requestJson).not.toContain('"kind"');
     const weekly: AgentDraft = { ...base, schedule: { kind: 'weekly', days: [1, 3], hour: 8, minute: 0 } };
     expect(draftToProjectSpec(weekly).agents[0].scheduler!.triggers[0].cron).toBe('0 8 * * 1,3');
     const interval: AgentDraft = { ...base, schedule: { kind: 'interval', minutes: 90 } };
     const itrig = draftToProjectSpec(interval).agents[0].scheduler!.triggers[0];
+    expect(itrig.kind).toBe(TriggerKind.UNSPECIFIED);
     expect(itrig.interval).toBe('1h30m');
     expect(itrig.cron).toBe('');
   });
@@ -71,7 +82,7 @@ describe('draftToProjectSpec', () => {
     expect(agent.scheduler).toBeDefined();
     expect(agent.scheduler!.enabled).toBe(false);
     expect(agent.scheduler!.triggers[0]).toMatchObject({
-      kind: TriggerKind.INTERVAL,
+      kind: TriggerKind.UNSPECIFIED,
       prompt: '整理今日待办',
     });
   });
@@ -95,6 +106,11 @@ describe('projectSpecToDraft', () => {
     expect(draft.workspace).toEqual({ kind: 'git', url: 'https://github.com/x/y.git', branch: 'main' });
     expect(draft.schedule).toEqual({ kind: 'daily', hour: 9, minute: 30 });
     expect(draft.jupyterEnabled).toBe(true);
+  });
+  it('未携带 trigger kind 枚举时，按 cron 或 interval 回填调度类型', () => {
+    const interval: AgentDraft = { ...base, schedule: { kind: 'interval', minutes: 90 } };
+    const draft = projectSpecToDraft(draftToProjectSpec(interval), 'my-daily-bot');
+    expect(draft.schedule).toEqual({ kind: 'interval', minutes: 90 });
   });
   it('agent 不存在时抛错', () => {
     const spec = draftToProjectSpec(base);
