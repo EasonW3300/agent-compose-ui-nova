@@ -72,7 +72,8 @@ export async function applyProject(
 }
 
 export async function removeProject(s: ConnectionSettings, ref: ProjectRef): Promise<void> {
-  await client(s).removeProject({ project: ref, removeHistory: true, stopRunningSandboxes: true });
+  // 当前 daemon 尚未实现物理清理运行历史；保留历史仍可删除项目并停止关联沙箱。
+  await client(s).removeProject({ project: ref, removeHistory: false, stopRunningSandboxes: true });
 }
 
 export async function startAgentRun(

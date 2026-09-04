@@ -110,11 +110,11 @@ describe('projects API', () => {
     const r = await applyProject(s, {} as never);
     expect(r.applied).toBe(true);
   });
-  it('removeProject 带 removeHistory/stopRunningSandboxes', async () => {
+  it('removeProject 保留运行历史并停止运行中的沙箱', async () => {
     await removeProject(s, projectRefByName('proj'));
     expect(removeProjectMock).toHaveBeenCalledWith({
       project: expect.objectContaining({ selector: { case: 'name', value: 'proj' } }),
-      removeHistory: true,
+      removeHistory: false,
       stopRunningSandboxes: true,
     });
   });
