@@ -40,7 +40,7 @@
 | `RUNNING` | Agent 发送明确的 `needs_input` 控制事件 | `WAITING_FOR_INPUT` | 保留 runtime、sandbox、会话与日志；发布状态事件 |
 | `WAITING_FOR_INPUT` | 用户发送回复 | `RUNNING` | 写入用户消息事件，向同一 runtime interaction 转发消息 |
 | `RUNNING` | Agent 发送明确的 `completed` 控制事件 | `SUCCEEDED` | 写入最终结果，关闭 interaction，按策略清理 sandbox |
-| `RUNNING` / `WAITING_FOR_INPUT` | 用户停止 | `STOPPED` | 取消 interaction 并清理资源 |
+| `RUNNING` / `WAITING_FOR_INPUT` | 用户停止 | `CANCELED`（界面显示“已停止”） | 取消 interaction 并清理资源 |
 | `RUNNING` / `WAITING_FOR_INPUT` | 等待期限到期 | `TIMED_OUT` | 写入超时原因，停止 interaction 并清理资源 |
 | `RUNNING` / `WAITING_FOR_INPUT` | daemon 重启或不可恢复的 runtime 中断 | `INTERRUPTED` | 写入可读原因；不声称会话可恢复 |
 | 任意非终态 | runtime/provider 错误 | `FAILED` | 记录错误并执行清理 |
