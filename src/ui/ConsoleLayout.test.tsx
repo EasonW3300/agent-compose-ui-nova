@@ -28,4 +28,10 @@ describe('ConsoleLayout', () => {
       '/console/agents',
     );
   });
+
+  it('在导航栏展示产品身份', () => {
+    renderAt('/console');
+    expect(screen.getByText('Agent Compose')).toBeInTheDocument();
+    expect(screen.getByText('本机 AI 工作台')).toBeInTheDocument();
+  });
 });
