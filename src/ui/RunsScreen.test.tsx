@@ -70,6 +70,7 @@ describe('RunsScreen', () => {
     ]);
     renderScreen();
     await waitFor(() => expect(screen.getByText('my-report')).toBeInTheDocument());
+    expect(document.querySelector('.runs-table-wrap')).toBeInTheDocument();
     expect(screen.getByText('定时触发')).toBeInTheDocument();
     expect(screen.getByText('已完成')).toBeInTheDocument();
     expect(screen.getByText('1 分 30 秒')).toBeInTheDocument();
