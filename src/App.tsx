@@ -16,31 +16,33 @@ export default function App() {
   const { state } = useDaemonProbe();
 
   if (state === 'probing') {
-    return <div role="status">正在寻找你电脑上的 agent-compose…</div>;
+    return <div className="acnova-app" role="status">正在寻找你电脑上的 agent-compose…</div>;
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        {state === 'offline' ? (
-          <SetupShell />
-        ) : (
-          <Routes>
-            <Route path="/" element={<Navigate to="/console" replace />} />
-            <Route path="/console" element={<ConsoleLayout />}>
-              <Route index element={<DashboardScreen />} />
-              <Route path="agents" element={<AgentListScreen />} />
-              <Route path="agents/new" element={<CreateWizard />} />
-              <Route path="agents/:agentName/edit" element={<CreateWizard />} />
-              <Route path="runs" element={<RunsScreen />} />
-              <Route path="runs/:runId" element={<RunDetailScreen />} />
-              <Route path="resources" element={<ResourcesScreen />} />
-              <Route path="settings" element={<SettingsScreen />} />
-              <Route path="*" element={<Navigate to="/console" replace />} />
-            </Route>
-          </Routes>
-        )}
-      </BrowserRouter>
-    </QueryClientProvider>
+    <div className="acnova-app">
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          {state === 'offline' ? (
+            <SetupShell />
+          ) : (
+            <Routes>
+              <Route path="/" element={<Navigate to="/console" replace />} />
+              <Route path="/console" element={<ConsoleLayout />}>
+                <Route index element={<DashboardScreen />} />
+                <Route path="agents" element={<AgentListScreen />} />
+                <Route path="agents/new" element={<CreateWizard />} />
+                <Route path="agents/:agentName/edit" element={<CreateWizard />} />
+                <Route path="runs" element={<RunsScreen />} />
+                <Route path="runs/:runId" element={<RunDetailScreen />} />
+                <Route path="resources" element={<ResourcesScreen />} />
+                <Route path="settings" element={<SettingsScreen />} />
+                <Route path="*" element={<Navigate to="/console" replace />} />
+              </Route>
+            </Routes>
+          )}
+        </BrowserRouter>
+      </QueryClientProvider>
+    </div>
   );
 }

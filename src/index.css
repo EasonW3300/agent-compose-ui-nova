@@ -1,1 +1,54 @@
-body { margin: 0; font-family: system-ui, sans-serif; }
+:root {
+  color-scheme: light dark;
+  font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { min-height: 100%; margin: 0; }
+
+body {
+  color: var(--colorNeutralForeground1);
+  background: var(--colorNeutralBackground3);
+}
+
+button, input, select, textarea { font: inherit; }
+
+.acnova-app {
+  --ac-canvas: var(--colorNeutralBackground3);
+  --ac-surface: var(--colorNeutralBackground1);
+  --ac-surface-subtle: var(--colorNeutralBackground2);
+  --ac-surface-hover: var(--colorNeutralBackground1Hover);
+  --ac-text: var(--colorNeutralForeground1);
+  --ac-text-muted: var(--colorNeutralForeground2);
+  --ac-border: var(--colorNeutralStroke1);
+  --ac-border-strong: var(--colorNeutralStroke1Hover);
+  --ac-accent: var(--colorBrandBackground);
+  --ac-accent-hover: var(--colorBrandBackgroundHover);
+  --ac-accent-foreground: var(--colorNeutralForegroundOnBrand);
+  --ac-focus: var(--colorStrokeFocus2);
+  --ac-danger: var(--colorPaletteRedForeground1);
+  --ac-warning: var(--colorPaletteMarigoldForeground2);
+  --ac-success: var(--colorPaletteGreenForeground1);
+  --ac-shadow-2: var(--shadow4);
+  --ac-shadow-8: var(--shadow16);
+  min-height: 100dvh;
+  color: var(--ac-text);
+  background: var(--ac-canvas);
+}
+
+.acnova-app :focus-visible {
+  outline: 2px solid var(--ac-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

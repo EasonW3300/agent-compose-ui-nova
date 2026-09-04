@@ -24,12 +24,13 @@
 **Files:**
 - Modify: `package.json`
 - Modify: `src/main.tsx`
+- Modify: `src/App.tsx`
 - Modify: `src/index.css`
 - Modify: `src/App.test.tsx`
 
 **Interfaces:**
 - Consumes: React root in `src/main.tsx` and existing `App` component.
-- Produces: a global `FluentProvider` wrapper and semantic CSS variables available to all existing class-based screens.
+- Produces: a global `FluentProvider` wrapper, an application root surface, and semantic CSS variables available to all existing class-based screens.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -53,7 +54,7 @@ Run:
 npm install @fluentui/react-components
 ```
 
-Update `src/main.tsx` to import `FluentProvider`, `webLightTheme`, `webDarkTheme`, and `useState`. Render a local `ThemedRoot` that follows `window.matchMedia('(prefers-color-scheme: dark)')`, wraps `App` in `FluentProvider`, and adds `<div className="acnova-app">` inside the provider. Add concise import and theme-selection comments.
+Update `src/main.tsx` to import `FluentProvider`, `webLightTheme`, `webDarkTheme`, and `useState`. Render a local `ThemedRoot` that follows `window.matchMedia('(prefers-color-scheme: dark)')` and wraps `App` in `FluentProvider`. Update `src/App.tsx` so its existing conditional application content is returned inside `<div className="acnova-app">`. Add concise import and theme-selection comments.
 
 Replace `src/index.css` with root-level token aliases and baseline styles. The implementation must map `--ac-*` variables to Fluent variables, set `color-scheme: light dark`, and include:
 
@@ -77,7 +78,7 @@ Expected: TypeScript build succeeds and the focused test passes.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add package.json package-lock.json src/main.tsx src/index.css src/App.test.tsx
+git add package.json package-lock.json src/main.tsx src/App.tsx src/index.css src/App.test.tsx
 git commit -m "feat: add Fluent UI theme foundation"
 ```
 

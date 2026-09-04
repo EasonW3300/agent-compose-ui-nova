@@ -30,6 +30,7 @@ describe('App 双世界决策', () => {
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument(),
     );
+    expect(document.querySelector('.acnova-app')).toBeInTheDocument();
   });
   it('离线时展示装机向导', async () => {
     probeMock.mockRejectedValue(new Error('down'));
