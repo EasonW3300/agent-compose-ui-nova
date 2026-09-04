@@ -17,9 +17,9 @@
 .setup-shell h2, .wizard-shell h2 { margin: 0 0 14px; font-size: 20px; letter-spacing: -.02em; }
 .setup-shell h3, .wizard-shell h3 { color: var(--ac-text); }
 .setup-shell p, .wizard-shell p { color: var(--ac-text-muted); line-height: 1.6; }
-.setup-shell input, .setup-shell textarea, .setup-shell select, .wizard-shell input, .wizard-shell textarea, .wizard-shell select { width: 100%; min-height: 36px; padding: 7px 10px; border: 1px solid var(--ac-border-strong); border-radius: 8px; color: var(--ac-text); background: var(--ac-surface); }
+.setup-shell input:not([type='radio']), .setup-shell textarea, .setup-shell select, .wizard-shell input:not([type='radio']), .wizard-shell textarea, .wizard-shell select { width: 100%; min-height: 36px; padding: 7px 10px; border: 1px solid var(--ac-border-strong); border-radius: 8px; color: var(--ac-text); background: var(--ac-surface); }
 .setup-shell textarea, .wizard-shell textarea { min-height: 116px; resize: vertical; }
-.setup-shell input:focus, .setup-shell textarea:focus, .setup-shell select:focus, .wizard-shell input:focus, .wizard-shell textarea:focus, .wizard-shell select:focus { outline: 2px solid var(--ac-focus); outline-offset: 1px; }
+.setup-shell input:not([type='radio']):focus, .setup-shell textarea:focus, .setup-shell select:focus, .wizard-shell input:not([type='radio']):focus, .wizard-shell textarea:focus, .wizard-shell select:focus { outline: 2px solid var(--ac-focus); outline-offset: 1px; }
 .setup-shell label, .wizard-shell label { display: grid; gap: 6px; color: var(--ac-text); font-size: 14px; font-weight: 600; }
 .setup-btn { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; padding: 7px 14px; border: 1px solid var(--ac-accent); border-radius: 8px; color: var(--ac-accent-foreground); background: var(--ac-accent); cursor: pointer; font-size: 14px; font-weight: 600; transition: background .16s ease, border-color .16s ease, transform .16s ease; }
 .setup-btn:hover:not(:disabled) { border-color: var(--ac-accent-hover); background: var(--ac-accent-hover); }
@@ -43,6 +43,7 @@
 .wizard-step--done .wizard-step__btn { color: var(--ac-text); }
 .wizard-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
 .engine-card { border-color: var(--ac-border); color: var(--ac-text); background: var(--ac-surface); }
+.engine-card input[type='radio'] { width: 16px; min-height: 16px; height: 16px; flex: 0 0 16px; margin: 0; padding: 0; accent-color: var(--ac-accent); appearance: auto; }
 .engine-card:has(input:checked) { border-color: var(--ac-accent); background: color-mix(in srgb, var(--ac-accent) 7%, transparent); }
 .engine-card span, .run-section__empty { color: var(--ac-text-muted); }
 @media (max-width: 767px) { .setup-shell, .wizard-shell { padding: 16px; } .setup-shell__panel, .wizard-shell__panel { padding: 22px 18px; } .setup-steps, .wizard-steps { grid-template-columns: 1fr; } .setup-step__btn, .wizard-step__btn { min-height: 38px; text-align: left; } .key-cards { grid-template-columns: 1fr; } .login__actions { grid-auto-flow: row; justify-content: stretch; } .login__actions .setup-btn { width: 100%; } }
