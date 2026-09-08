@@ -22,6 +22,18 @@ describe('MaterialsStep', () => {
       expect(screen.getByRole('radio', { name: new RegExp(name) })).toBeInTheDocument();
     }
   });
+  it('始终说明隔离区初始为空，且仅展示配置材料的容器内目标路径', () => {
+    const draft = {
+      ...emptyDraft(),
+      workspace: { kind: 'local' as const, path: '/Users/me/work-log' },
+      volumes: [{ source: '/Users/me/inbox', target: '/workspace/inbox', readOnly: true }],
+    };
+    render(<MaterialsStep draft={draft} update={vi.fn()} goNext={vi.fn()} goBack={vi.fn()} />);
+    expect(screen.getByText(/隔离区默认为空/)).toBeInTheDocument();
+    expect(screen.getByText(/工作区目标：\/workspace/)).toBeInTheDocument();
+    expect(screen.getByText(/挂载目标：\/workspace\/inbox/)).toBeInTheDocument();
+    expect(screen.queryByText(/可以直接读取你的电脑/)).not.toBeInTheDocument();
+  });
   it('选本地路径写入 workspace.local', async () => {
     const update = vi.fn();
     const user = userEvent.setup();

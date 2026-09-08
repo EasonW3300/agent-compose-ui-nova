@@ -44,6 +44,13 @@ describe('agentCardStatus', () => {
     const a = makeAgent({ currentRun: { text: '', runningRunCount: 1, runningSchedulerRunCount: 0 } });
     expect(agentCardStatus(a)).toBe('working');
   });
+  it('等待回复优先于一般运行中状态 → waiting', () => {
+    const a = makeAgent({
+      currentRun: { text: '', runningRunCount: 1, runningSchedulerRunCount: 0 },
+      latestRun: { runId: 'r1', status: RunStatus.WAITING_FOR_INPUT, source: 1, at: undefined },
+    });
+    expect(agentCardStatus(a)).toBe('waiting');
+  });
   it('enabled=false → paused', () => {
     expect(agentCardStatus(makeAgent({ enabled: false }))).toBe('paused');
   });
@@ -56,6 +63,7 @@ describe('agentCardStatus', () => {
   });
   it('描述文案用人话', () => {
     expect(describeAgentCardStatus('working')).toBe('正在工作');
+    expect(describeAgentCardStatus('waiting')).toBe('等待你的回复');
     expect(describeAgentCardStatus('idle')).toBe('待命中');
   });
 });

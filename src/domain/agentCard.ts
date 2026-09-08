@@ -1,10 +1,13 @@
 import { timestampDate } from '@bufbuild/protobuf/wkt';
 import { RunStatus, type Project, type ProjectAgent } from '../api/gen/agentcompose/v2/agentcompose_pb';
 
-export type AgentCardStatus = 'working' | 'paused' | 'errored' | 'idle';
+// Protobuf run status is the source of truth for a retained conversation's waiting state.
+export type AgentCardStatus = 'working' | 'waiting' | 'paused' | 'errored' | 'idle';
 
 /** 状态推导优先级：运行中 > 已暂停 > 出错 > 待命中。 */
 export function agentCardStatus(agent: ProjectAgent): AgentCardStatus {
+  // Waiting conversations are active but need a reply, so they take precedence over generic work.
+  if (agent.latestRun?.status === RunStatus.WAITING_FOR_INPUT) return 'waiting';
   if (agent.currentRun && agent.currentRun.runningRunCount > 0) return 'working';
   if (!agent.enabled) return 'paused';
   if (agent.latestRun && agent.latestRun.status === RunStatus.FAILED) return 'errored';
@@ -13,6 +16,7 @@ export function agentCardStatus(agent: ProjectAgent): AgentCardStatus {
 
 const AGENT_CARD_STATUS_LABELS: Record<AgentCardStatus, string> = {
   working: '正在工作',
+  waiting: '等待你的回复',
   paused: '已暂停',
   errored: '出了点问题',
   idle: '待命中',

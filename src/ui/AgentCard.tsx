@@ -1,6 +1,8 @@
 import { PROVIDERS } from '../domain/labels';
 import { describeAgentCardStatus, type AgentCard as AgentCardModel } from '../domain/agentCard';
 
+// Agent-card domain mappings provide the human status label and semantic tone for this badge.
+
 interface Props {
   card: AgentCardModel;
   busy?: boolean;

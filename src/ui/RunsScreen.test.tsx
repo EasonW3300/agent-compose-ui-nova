@@ -75,6 +75,12 @@ describe('RunsScreen', () => {
     expect(screen.getByText('已完成')).toBeInTheDocument();
     expect(screen.getByText('1 分 30 秒')).toBeInTheDocument();
   });
+  it('等待输入运行展示可辨识的等待回复徽标', async () => {
+    listRunsMock.mockResolvedValue([summary({ status: RunStatus.WAITING_FOR_INPUT })]);
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('等待你的回复')).toBeInTheDocument());
+    expect(document.querySelector('.run-status--waiting')).toBeInTheDocument();
+  });
   it('点行跳运行详情', async () => {
     listRunsMock.mockResolvedValue([summary({ runId: 'r9' })]);
     const user = userEvent.setup();

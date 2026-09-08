@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { loadConnectionSettings } from '../api/connection';
-import { applyProject, getProject, projectRefByName, startAgentRun, validateProject } from '../api/projects';
+import { applyProject, getProject, projectRefByName, startInteractiveAgentRun, validateProject } from '../api/projects';
 import { draftToProjectSpec, projectSpecToDraft } from '../domain/projectSpec';
 import { emptyDraft, type AgentDraft } from '../domain/agentDraft';
 import { useSetupWizard } from '../hooks/useSetupWizard';
@@ -14,7 +14,7 @@ import { ScheduleStep } from './steps/ScheduleStep';
 import { MaterialsStep } from './steps/MaterialsStep';
 import { ConfirmStep, type ConfirmIssue } from './steps/ConfirmStep';
 
-// Project APIs retain the existing validate, save, and test-run workflow while this component owns only wizard presentation state.
+// Project APIs retain validation and saving; only the explicit test entry point starts an interactive run.
 // The draft converters keep the UI model and daemon project specification aligned at the save boundary.
 export function CreateWizard() {
   const navigate = useNavigate();
@@ -74,9 +74,9 @@ export function CreateWizard() {
       }
       await queryClient.invalidateQueries({ queryKey: ['agents'] });
       if (runAfter) {
-        // 测试运行一次：先 Apply 拿到 projectId，再 StartAgentRun(source=MANUAL) 并跳运行详情。
+        // A test run retains its sandbox conversation; saving still starts no run at all.
         const pid = ares.project?.summary?.projectId ?? '';
-        const run = await startAgentRun(s, { projectId: pid, agentName: spec.name, prompt: current.prompt });
+        const run = await startInteractiveAgentRun(s, { projectId: pid, agentName: spec.name, prompt: current.prompt });
         navigate(`/console/runs/${run.runId}`);
       } else {
         navigate('/console/agents');

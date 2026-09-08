@@ -65,6 +65,15 @@ describe('AgentListScreen', () => {
     await waitFor(() => expect(screen.getByText('我的日报')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /新建/ })).toBeInTheDocument();
   });
+  it('等待用户回复的助手显示等待徽标', async () => {
+    useAgentsMock.mockReturnValue({
+      data: [{ ...card, status: 'waiting', latestRun: { runId: 'r1', statusLabel: '等待你的回复', at: null } }],
+      isLoading: false,
+    });
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('等待你的回复')).toBeInTheDocument());
+    expect(document.querySelector('.agent-card__badge--waiting')).toBeInTheDocument();
+  });
   it('空列表给引导文案', () => {
     useAgentsMock.mockReturnValue({ data: [], isLoading: false });
     renderScreen();

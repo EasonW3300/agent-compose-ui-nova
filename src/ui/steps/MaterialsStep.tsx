@@ -8,6 +8,7 @@ export function MaterialsStep({ draft, update, goNext }: WizardStepProps) {
   // 受控组件在 onChange 闭包里会丢失联合收窄，这里先把收窄后的工作区抓出来。
   const localWs = kind === 'local' ? draft.workspace : null;
   const gitWs = kind === 'git' ? draft.workspace : null;
+  const mountedVolumes = draft.volumes.filter((volume) => volume.target.trim());
 
   function next() {
     if (localWs && !localWs.path.trim()) {
@@ -24,6 +25,16 @@ export function MaterialsStep({ draft, update, goNext }: WizardStepProps) {
   return (
     <section aria-label="工作材料">
       <h2>给它什么工作材料？</h2>
+      <aside className="workspace-notice" role="note">
+        <h3>隔离区默认为空</h3>
+        <p>助手只能看到本页明确配置后挂载或克隆进隔离区的材料，不能直接读取你电脑上的其他文件。</p>
+        {kind !== 'none' && <p>工作区目标：/workspace</p>}
+        {mountedVolumes.length > 0 && (
+          <ul className="workspace-notice__destinations" aria-label="挂载目标路径">
+            {mountedVolumes.map((volume, index) => <li key={`${volume.target}-${index}`}>挂载目标：{volume.target.trim()}</li>)}
+          </ul>
+        )}
+      </aside>
       <fieldset>
         <legend className="sr-only">工作区</legend>
         <label className="engine-card">
@@ -32,11 +43,11 @@ export function MaterialsStep({ draft, update, goNext }: WizardStepProps) {
         </label>
         <label className="engine-card">
           <input type="radio" name="ws" checked={kind === 'local'} onChange={() => update({ workspace: { kind: 'local', path: '' } })} />
-          <strong>本地文件夹</strong><span>给它一个你电脑上的文件夹</span>
+          <strong>本地文件夹</strong><span>将指定文件夹挂载进隔离区</span>
         </label>
         <label className="engine-card">
           <input type="radio" name="ws" checked={kind === 'git'} onChange={() => update({ workspace: { kind: 'git', url: '' } })} />
-          <strong>Git 仓库</strong><span>克隆一个仓库作为材料</span>
+          <strong>Git 仓库</strong><span>将仓库克隆到隔离工作区</span>
         </label>
       </fieldset>
 

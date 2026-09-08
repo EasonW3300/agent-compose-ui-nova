@@ -8,12 +8,14 @@ import { CreateWizard } from './CreateWizard';
 const validateProjectMock = vi.fn();
 const applyProjectMock = vi.fn();
 const startAgentRunMock = vi.fn();
+const startInteractiveAgentRunMock = vi.fn();
 const getProjectMock = vi.fn();
 
 vi.mock('../api/projects', () => ({
   validateProject: (...a: unknown[]) => validateProjectMock(...a),
   applyProject: (...a: unknown[]) => applyProjectMock(...a),
   startAgentRun: (...a: unknown[]) => startAgentRunMock(...a),
+  startInteractiveAgentRun: (...a: unknown[]) => startInteractiveAgentRunMock(...a),
   getProject: (...a: unknown[]) => getProjectMock(...a),
   // ProjectRef 真实形状是 { selector: { case, value } }（oneof 在 selector 下），平铺 { case, value } 会编译不过。
   projectRefByName: (name: string) => ({ selector: { case: 'name' as const, value: name } }),
@@ -56,6 +58,7 @@ describe('CreateWizard 全流程', () => {
     validateProjectMock.mockReset().mockResolvedValue({ valid: true, issues: [] });
     applyProjectMock.mockReset().mockResolvedValue({ applied: true, issues: [], project: { summary: { projectId: 'p1' } } });
     startAgentRunMock.mockReset().mockResolvedValue({ runId: 'r1' });
+    startInteractiveAgentRunMock.mockReset().mockResolvedValue({ runId: 'r1' });
     getProjectMock.mockReset();
   });
   it('新建：走完 5 步，保存先 Validate 再 Apply，然后回到列表', async () => {
@@ -78,17 +81,18 @@ describe('CreateWizard 全流程', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/provider 不支持/));
     expect(applyProjectMock).not.toHaveBeenCalled();
   });
-  it('测试运行一次：Validate+Apply 后调 StartAgentRun 并跳运行详情', async () => {
+  it('测试运行一次：Validate+Apply 后启动可回复的互动运行并跳运行详情', async () => {
     const user = userEvent.setup();
     renderWizard();
     await walkToConfirm(user);
     await user.click(screen.getByRole('button', { name: /测试运行一次/ }));
-    await waitFor(() => expect(startAgentRunMock).toHaveBeenCalled());
+    await waitFor(() => expect(startInteractiveAgentRunMock).toHaveBeenCalled());
     // Apply 返回的 projectId 作为 Run 的项目引用；slugify('我的机器人') 退化为确定性唯一 'assistant-53aa96'。
-    expect(startAgentRunMock).toHaveBeenCalledWith(
+    expect(startInteractiveAgentRunMock).toHaveBeenCalledWith(
       { baseUrl: '', authToken: '' },
       { projectId: 'p1', agentName: 'assistant-53aa96', prompt: '整理日志' },
     );
+    expect(startAgentRunMock).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.getByText('run detail r1')).toBeInTheDocument());
   });
   it('编辑：GetProject 回填草稿，标题为「编辑 AI 助手」', async () => {

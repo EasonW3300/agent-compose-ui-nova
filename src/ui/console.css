@@ -18,6 +18,7 @@
 .agent-card__meta { color: #666; font-size: 13px; }
 .agent-card__badge { align-self: flex-start; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
 .agent-card__badge--working { background: #dbeafe; color: #1e40af; }
+.agent-card__badge--waiting { background: #fef3c7; color: #92400e; }
 .agent-card__badge--paused { background: #f3f4f6; color: #6b7280; }
 .agent-card__badge--errored { background: #fee2e2; color: #b91c1c; }
 .agent-card__badge--idle { background: #dcfce7; color: #15803d; }
@@ -43,6 +44,10 @@
 .wizard-advanced { margin-top: 12px; padding: 12px 14px; border: 1px dashed var(--ac-border, #d5d5d5); border-radius: 12px; background: #fafafa; display: flex; flex-direction: column; gap: 8px; }
 .wizard-advanced h4 { margin: 8px 0 0; font-size: 14px; }
 .env-row, .volume-row, .mcp-row, .skill-row { display: flex; align-items: center; gap: 8px; }
+.workspace-notice { margin: 0 0 16px; padding: 12px 14px; border: 1px solid #f2cc60; border-radius: 10px; background: #fffaf0; }
+.workspace-notice h3 { margin: 0 0 4px; font-size: 14px; }
+.workspace-notice p { margin: 4px 0; color: var(--ac-text-muted); font-size: 13px; }
+.workspace-notice__destinations { margin: 6px 0 0; padding-left: 20px; color: var(--ac-text-muted); font-size: 13px; }
 .task-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .week-picker { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -66,6 +71,7 @@
 .runs-table tbody tr:hover { background: #f8fafc; }
 .run-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
 .run-status--running { background: #dbeafe; color: #1e40af; }
+.run-status--waiting { background: #fef3c7; color: #92400e; }
 .run-status--succeeded { background: #dcfce7; color: #15803d; }
 .run-status--failed { background: #fee2e2; color: #b91c1c; }
 .run-status--stopped, .run-status--idle { background: #f3f4f6; color: #6b7280; }
@@ -193,6 +199,7 @@
 .agent-card__actions, .runs-actions, .dash-block--links { gap: 8px; }
 .agent-card__badge, .run-status { font-weight: 600; }
 .agent-card__badge--working, .run-status--running { color: #0f5fad; background: #dceeff; }
+.agent-card__badge--waiting, .run-status--waiting { color: #92400e; background: #fff4ce; }
 .agent-card__badge--paused, .run-status--stopped, .run-status--idle { color: var(--ac-text-muted); background: var(--ac-surface-subtle); }
 .agent-card__badge--errored, .run-status--failed { color: #b10e1e; background: #ffe6e8; }
 .agent-card__badge--idle, .run-status--succeeded { color: #0b6a3b; background: #dff8e9; }
