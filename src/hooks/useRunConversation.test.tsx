@@ -1,9 +1,12 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ConnectionSettings } from '../api/connection';
 import { useRunConversation } from './useRunConversation';
+
+// waitFor observes React Query's asynchronously committed mutation state; mutateAsync rejecting
+// alone does not guarantee the hook consumer has rendered its error state in the same microtask.
 
 const sendMock = vi.fn();
 
@@ -54,6 +57,12 @@ describe('useRunConversation', () => {
     });
 
     expect(invalidateSpy).not.toHaveBeenCalled();
-    expect(result.current.error).toBe(failure);
+    // The transport promise rejects before MutationObserver notifies React. Wait for the state
+    // exposed to UI consumers instead of assuming both lifecycles complete together.
+    await waitFor(() => {
+      expect(result.current.error).toBe(failure);
+      expect(result.current.isSending).toBe(false);
+    });
+    expect(sendMock).toHaveBeenCalledTimes(1);
   });
 });
