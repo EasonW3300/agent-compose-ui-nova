@@ -87,6 +87,20 @@ export async function startAgentRun(
   return res.run;
 }
 
+/** 启动保留上下文的互动运行；后续用户消息会通过独立 RPC 写入同一 run。 */
+export async function startInteractiveAgentRun(
+  s: ConnectionSettings,
+  run: { projectId: string; agentName: string; prompt: string },
+): Promise<RunSummary> {
+  // Interactive and one-shot runs share the same payload; the RPC method selects
+  // the persistent conversation lifecycle while MANUAL preserves the UI trigger source.
+  const res = await runClient(s).startInteractiveAgentRun({
+    run: { projectId: run.projectId, agentName: run.agentName, prompt: run.prompt, source: RunSource.MANUAL },
+  });
+  if (!res.run) throw new Error('startInteractiveAgentRun 未返回 run');
+  return res.run;
+}
+
 /** 取某 agent 调度器首个「真正有 nextFireAt 的」enabled trigger（裁决表 3）。 */
 export async function getSchedulerNextFire(
   s: ConnectionSettings,

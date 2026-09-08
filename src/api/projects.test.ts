@@ -6,6 +6,7 @@ const validateProjectMock = vi.fn();
 const applyProjectMock = vi.fn();
 const removeProjectMock = vi.fn();
 const startAgentRunMock = vi.fn();
+const startInteractiveAgentRunMock = vi.fn();
 const getSchedulerMock = vi.fn();
 
 // 复刻 connection.test.ts 的 mock 结构：createConnectTransport 保留 options（含 interceptors），
@@ -39,6 +40,7 @@ vi.mock('@connectrpc/connect', async (importOriginal) => {
         applyProject: (...a: unknown[]) => withInterceptors(() => applyProjectMock(...a)),
         removeProject: (...a: unknown[]) => withInterceptors(() => removeProjectMock(...a)),
         startAgentRun: (...a: unknown[]) => withInterceptors(() => startAgentRunMock(...a)),
+        startInteractiveAgentRun: (...a: unknown[]) => withInterceptors(() => startInteractiveAgentRunMock(...a)),
         getScheduler: (...a: unknown[]) => withInterceptors(() => getSchedulerMock(...a)),
       };
     }),
@@ -55,6 +57,7 @@ import {
   applyProject,
   removeProject,
   startAgentRun,
+  startInteractiveAgentRun,
   getSchedulerNextFire,
   setAgentEnabled,
   projectRefByName,
@@ -71,6 +74,7 @@ describe('projects API', () => {
     applyProjectMock.mockReset();
     removeProjectMock.mockReset();
     startAgentRunMock.mockReset();
+    startInteractiveAgentRunMock.mockReset();
     getSchedulerMock.mockReset();
   });
   it('listProjects 返回摘要列表', async () => {
@@ -123,6 +127,14 @@ describe('projects API', () => {
     const r = await startAgentRun(s, { projectId: 'p1', agentName: 'a1', prompt: '跑一下' });
     expect(startAgentRunMock).toHaveBeenCalledWith({
       run: { projectId: 'p1', agentName: 'a1', prompt: '跑一下', source: RunSource.MANUAL },
+    });
+    expect(r.runId).toBe('r1');
+  });
+  it('startInteractiveAgentRun 用 MANUAL source 启动可回复运行', async () => {
+    startInteractiveAgentRunMock.mockResolvedValue({ run: { runId: 'r1', status: 2 }, started: true });
+    const r = await startInteractiveAgentRun(s, { projectId: 'p1', agentName: 'a1', prompt: '整理日志' });
+    expect(startInteractiveAgentRunMock).toHaveBeenCalledWith({
+      run: { projectId: 'p1', agentName: 'a1', prompt: '整理日志', source: RunSource.MANUAL },
     });
     expect(r.runId).toBe('r1');
   });

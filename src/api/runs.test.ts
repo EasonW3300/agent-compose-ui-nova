@@ -6,6 +6,7 @@ const stopRunMock = vi.fn();
 const listRunEventsMock = vi.fn();
 const followRunLogsMock = vi.fn();
 const startAgentRunMock = vi.fn();
+const sendRunHumanMessageMock = vi.fn();
 const getDashboardOverviewMock = vi.fn();
 const watchDashboardOverviewMock = vi.fn();
 
@@ -38,6 +39,7 @@ vi.mock('@connectrpc/connect', async (importOriginal) => {
         stopRun: (...a: unknown[]) => withInterceptors(() => stopRunMock(...a)),
         listRunEvents: (...a: unknown[]) => withInterceptors(() => listRunEventsMock(...a)),
         startAgentRun: (...a: unknown[]) => withInterceptors(() => startAgentRunMock(...a)),
+        sendRunHumanMessage: (...a: unknown[]) => withInterceptors(() => sendRunHumanMessageMock(...a)),
         // server-streaming 方法在 connect-web v2 中同步返回 AsyncIterable（非 Promise），
         // 因此不能走 withInterceptors 的 Promise 包裹，需直接透传 mock 的迭代器。
         followRunLogs: (...a: unknown[]) => followRunLogsMock(...a),
@@ -56,6 +58,7 @@ import {
   listRunEvents,
   followRunLogs,
   retryRun,
+  sendRunHumanMessage,
   getDashboardOverview,
   watchDashboardOverview,
 } from './runs';
@@ -75,6 +78,7 @@ describe('runs API', () => {
     listRunEventsMock.mockReset().mockResolvedValue({ events: [], total: 0 });
     followRunLogsMock.mockReset();
     startAgentRunMock.mockReset();
+    sendRunHumanMessageMock.mockReset();
     getDashboardOverviewMock.mockReset();
     watchDashboardOverviewMock.mockReset();
   });
@@ -177,5 +181,14 @@ describe('runs API', () => {
   it('retryRun 找不到 detail 抛人话错误', async () => {
     getRunMock.mockResolvedValue({ run: undefined });
     await expect(retryRun(s, 'r1')).rejects.toThrow('运行不存在');
+  });
+
+  it('sendRunHumanMessage 保留调用方提供的幂等消息 ID', async () => {
+    sendRunHumanMessageMock.mockResolvedValue({ run: { runId: 'r1', status: RunStatus.RUNNING } });
+    const run = await sendRunHumanMessage(s, 'r1', '日志在 /workspace/log.md', 'm1');
+    expect(sendRunHumanMessageMock).toHaveBeenCalledWith({
+      runId: 'r1', text: '日志在 /workspace/log.md', clientMessageId: 'm1',
+    });
+    expect(run.runId).toBe('r1');
   });
 });

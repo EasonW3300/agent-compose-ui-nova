@@ -47,6 +47,20 @@ export async function stopRun(
   return res.run;
 }
 
+/** 将用户回复追加到等待输入的互动运行；clientMessageId 由调用者生成以支持安全重试。 */
+export async function sendRunHumanMessage(
+  s: ConnectionSettings,
+  runId: string,
+  text: string,
+  clientMessageId: string,
+): Promise<RunSummary> {
+  // The daemon deduplicates by this caller-owned ID, so retries must preserve it
+  // instead of generating a new ID inside the transport wrapper.
+  const res = await runClient(s).sendRunHumanMessage({ runId, text, clientMessageId });
+  if (!res.run) throw new Error('sendRunHumanMessage 未返回 run');
+  return res.run;
+}
+
 export interface ListRunEventsResult {
   events: RunEvent[];
   total: number;
