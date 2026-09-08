@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { timestampDate } from '@bufbuild/protobuf/wkt';
-import { RunEventKind, type RunEvent } from '../api/gen/agentcompose/v2/agentcompose_pb';
+import { RunEventKind, RunStatus, type RunEvent } from '../api/gen/agentcompose/v2/agentcompose_pb';
 import { loadConnectionSettings } from '../api/connection';
 import { getRun, listRunEvents, retryRun, stopRun } from '../api/runs';
 import { runStatusLabel } from '../domain/agentCard';
-import { describeRunEventKind, describeRunSource, formatClockTime, formatDuration, formatTime, isRunTerminal, runStatusTone } from '../domain/runView';
+import { describeRunEventKind, describeRunSource, formatClockTime, formatDuration, formatTime, runStatusTone } from '../domain/runView';
+import { useRunConversation } from '../hooks/useRunConversation';
 import { useRunLogs } from '../hooks/useRunLogs';
 import './console.css';
 
@@ -23,6 +24,8 @@ export function RunDetailScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(false);
   const [kindFilter, setKindFilter] = useState<'all' | RunEventKind>('all');
+  const [reply, setReply] = useState('');
+  const [replyValidationError, setReplyValidationError] = useState<string | null>(null);
 
   const runQuery = useQuery({
     queryKey: ['run', runId],
@@ -65,6 +68,7 @@ export function RunDetailScreen() {
 
   const visibleEvents = kindFilter === 'all' ? events : events.filter((ev) => ev.kind === kindFilter);
   const logs = useRunLogs(s, runId || null, { tailLines: 200, follow: true, includeMetadata: true });
+  const conversation = useRunConversation(s, runId);
 
   const stopMutation = useMutation({
     mutationFn: async () => {
@@ -110,7 +114,27 @@ export function RunDetailScreen() {
     );
   }
   const summary = detail.summary;
-  const terminal = isRunTerminal(summary.status);
+  const waitingForReply = summary.status === RunStatus.WAITING_FOR_INPUT;
+  // Only live runs can be stopped. Timed-out and interrupted conversations are already terminal on the daemon.
+  const canStop = summary.status === RunStatus.PENDING || summary.status === RunStatus.RUNNING || waitingForReply;
+  const stopLabel = waitingForReply ? '结束任务' : '停止这次运行';
+
+  const submitReply = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = reply.trim();
+    if (!text) {
+      setReplyValidationError('请输入回复内容。');
+      return;
+    }
+
+    setReplyValidationError(null);
+    try {
+      await conversation.send(text);
+      setReply('');
+    } catch {
+      // The mutation retains the transport error so it can be announced beside the field.
+    }
+  };
 
   return (
     <section className="console-page">
@@ -141,10 +165,39 @@ export function RunDetailScreen() {
 
       {retryMutation.isError && <div className="run-banner__error" role="alert">重新运行失败，请稍后再试。</div>}
 
-      {!terminal && (
+      {canStop && (
         <div className="run-section">
-          <button type="button" className="setup-btn" onClick={() => setConfirmingStop(true)}>停止这次运行</button>
+          <button type="button" className="setup-btn" onClick={() => setConfirmingStop(true)}>{stopLabel}</button>
         </div>
+      )}
+
+      {waitingForReply && (
+        <section className="run-section run-conversation-reply" aria-labelledby="reply-heading">
+          <div className="run-section__head"><h3 id="reply-heading">补充信息</h3></div>
+          <p className="run-section__empty">补充信息后，助手会在当前隔离环境中继续完成任务。</p>
+          <form className="run-conversation-reply__form" onSubmit={submitReply} noValidate>
+            <label htmlFor="run-reply">回复助手</label>
+            <textarea
+              id="run-reply"
+              value={reply}
+              onChange={(event) => {
+                setReply(event.target.value);
+                if (replyValidationError) setReplyValidationError(null);
+              }}
+              aria-invalid={Boolean(replyValidationError || conversation.error)}
+              aria-describedby={replyValidationError || conversation.error ? 'run-reply-error' : undefined}
+              disabled={conversation.isSending}
+              rows={4}
+            />
+            {replyValidationError && <p id="run-reply-error" className="run-conversation-reply__error" role="alert">{replyValidationError}</p>}
+            {!replyValidationError && conversation.error && <p id="run-reply-error" className="run-conversation-reply__error" role="alert">发送回复失败：{conversation.error.message}</p>}
+            <div className="runs-actions">
+              <button type="submit" className="setup-btn" disabled={conversation.isSending}>
+                {conversation.isSending ? '发送中…' : '发送回复'}
+              </button>
+            </div>
+          </form>
+        </section>
       )}
 
       <div className="run-section">
@@ -171,7 +224,7 @@ export function RunDetailScreen() {
       </div>
 
       <div className="run-section">
-        <div className="run-section__head"><h3>事件时间线</h3></div>
+        <div className="run-section__head"><h3>对话记录</h3></div>
         {events.length === 0 ? (
           <p className="run-section__empty">暂无事件。</p>
         ) : (
@@ -223,7 +276,7 @@ export function RunDetailScreen() {
       {confirmingStop && (
         <div className="auth-overlay" role="dialog" aria-label="停止确认">
           <div>
-            <h3>停止这次运行？</h3>
+            <h3>{waitingForReply ? '结束任务？' : '停止这次运行？'}</h3>
             <p>正在进行的任务会立刻中断，已写入的结果不会保留。</p>
             <div className="auth-overlay__actions">
               <button type="button" className="setup-btn" disabled={stopMutation.isPending} onClick={() => stopMutation.mutate()}>

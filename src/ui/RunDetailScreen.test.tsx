@@ -21,6 +21,11 @@ vi.mock('../api/connection', () => ({ loadConnectionSettings: () => ({ baseUrl: 
 const useRunLogsMock = vi.fn();
 vi.mock('../hooks/useRunLogs', () => ({ useRunLogs: (...a: unknown[]) => useRunLogsMock(...a) }));
 
+const useRunConversationMock = vi.fn();
+vi.mock('../hooks/useRunConversation', () => ({
+  useRunConversation: (...a: unknown[]) => useRunConversationMock(...a),
+}));
+
 function summary(status: RunStatus) {
   return {
     runId: 'r1', projectId: 'p1', projectName: 'proj', projectRevision: 0n, agentId: 'ag',
@@ -56,6 +61,11 @@ describe('RunDetailScreen', () => {
     useRunLogsMock.mockReset().mockReturnValue({
       lines: [{ id: 0, text: '第 1 行' }],
       status: null, connected: true, error: null, reset: vi.fn(),
+    });
+    useRunConversationMock.mockReset().mockReturnValue({
+      send: vi.fn().mockResolvedValue(undefined),
+      isSending: false,
+      error: null,
     });
   });
   it('加载中给状态提示', () => {
@@ -95,6 +105,55 @@ describe('RunDetailScreen', () => {
     renderScreen();
     await waitFor(() => expect(screen.getByText('已完成')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /停止这次运行/ })).not.toBeInTheDocument();
+  });
+
+  it('等待输入时发送回复，并把持久化事件显示为对话记录', async () => {
+    const sendMock = vi.fn().mockResolvedValue(undefined);
+    useRunConversationMock.mockReturnValue({ send: sendMock, isSending: false, error: null });
+    getRunMock.mockResolvedValue({ summary: summary(RunStatus.WAITING_FOR_INPUT), prompt: '', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '' });
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.type(await screen.findByLabelText('回复助手'), '日志在 /workspace/log.md');
+    await user.click(screen.getByRole('button', { name: '发送回复' }));
+
+    expect(sendMock).toHaveBeenCalledWith('日志在 /workspace/log.md');
+    expect(screen.getByRole('heading', { name: '对话记录' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '结束任务' })).toBeInTheDocument();
+  });
+
+  it('非等待状态隐藏回复控件', async () => {
+    getRunMock.mockResolvedValue({ summary: summary(RunStatus.SUCCEEDED), prompt: '', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '' });
+    renderScreen();
+
+    await waitFor(() => expect(screen.getByText('已完成')).toBeInTheDocument());
+    expect(screen.queryByLabelText('回复助手')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '发送回复' })).not.toBeInTheDocument();
+  });
+
+  it('阻止仅空白的回复并显示内联校验错误', async () => {
+    const sendMock = vi.fn();
+    useRunConversationMock.mockReturnValue({ send: sendMock, isSending: false, error: null });
+    getRunMock.mockResolvedValue({ summary: summary(RunStatus.WAITING_FOR_INPUT), prompt: '', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '' });
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.type(await screen.findByLabelText('回复助手'), '   ');
+    await user.click(screen.getByRole('button', { name: '发送回复' }));
+
+    expect(sendMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('请输入回复内容');
+  });
+
+  it('发送期间禁用控件，并在 mutation 失败时展示内联错误', async () => {
+    useRunConversationMock.mockReturnValue({ send: vi.fn(), isSending: true, error: new Error('回复已过期') });
+    getRunMock.mockResolvedValue({ summary: summary(RunStatus.WAITING_FOR_INPUT), prompt: '', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '' });
+    renderScreen();
+
+    const replyField = await screen.findByLabelText('回复助手');
+    expect(replyField).toBeDisabled();
+    expect(screen.getByRole('button', { name: '发送中…' })).toBeDisabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('发送回复失败：回复已过期');
   });
   it('重新运行一次：调 retryRun 并跳转到新 run 详情', async () => {
     const user = userEvent.setup();

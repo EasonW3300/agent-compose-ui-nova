@@ -225,6 +225,13 @@
 .run-event__time { color: var(--ac-text-muted); }
 .run-event__payload pre { border-color: var(--ac-border); background: var(--ac-surface-subtle); color: var(--ac-text); }
 
+/* ===== 等待用户回复 ===== */
+.run-conversation-reply { border-color: color-mix(in srgb, var(--ac-accent) 30%, var(--ac-border)); }
+.run-conversation-reply__form { display: grid; gap: 8px; margin-top: 12px; }
+.run-conversation-reply__form label { color: var(--ac-text); font-size: 14px; font-weight: 600; }
+.run-conversation-reply__form textarea { width: 100%; min-height: 104px; padding: 10px 12px; resize: vertical; font: inherit; line-height: 1.5; }
+.run-conversation-reply__error { margin: 0; color: #b10e1e !important; font-size: 13px; }
+
 .auth-overlay { padding: 20px; background: rgb(15 23 42 / .42); backdrop-filter: blur(3px); }
 .auth-overlay > div { width: min(440px, 100%); border: 1px solid var(--ac-border); border-radius: 12px; background: var(--ac-surface); box-shadow: var(--ac-shadow-8); }
 
