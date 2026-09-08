@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithClient } from '../test/renderWithClient';
 import { RunSource, RunStatus } from '../api/gen/agentcompose/v2/agentcompose_pb';
@@ -120,5 +120,34 @@ describe('RunsScreen', () => {
     await user.click(screen.getByRole('button', { name: '再次运行' }));
     await waitFor(() => expect(retryRunMock).toHaveBeenCalledWith({ baseUrl: '', authToken: '' }, 'r9'));
     await waitFor(() => expect(screen.getByText('run detail')).toBeInTheDocument());
+  });
+
+  it.each([
+    [RunStatus.TIMED_OUT, '等待回复超时'],
+    [RunStatus.INTERRUPTED, '运行已中断'],
+  ])('终态 %s 显示再次运行而非停止，且不会触发 StopRun', async (status, label) => {
+    listRunsMock.mockResolvedValue([summary({ status })]);
+    renderScreen();
+
+    await waitFor(() => expect(screen.getByText(label)).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: '再次运行' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '停止' })).not.toBeInTheDocument();
+    expect(stopRunMock).not.toHaveBeenCalled();
+  });
+
+  it.each([RunStatus.TIMED_OUT, RunStatus.INTERRUPTED])('终态 %s 不会启动 5 秒轮询', async (status) => {
+    vi.useFakeTimers();
+    try {
+      listRunsMock.mockResolvedValue([summary({ status })]);
+      renderScreen();
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(listRunsMock).toHaveBeenCalledTimes(1);
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+      expect(listRunsMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

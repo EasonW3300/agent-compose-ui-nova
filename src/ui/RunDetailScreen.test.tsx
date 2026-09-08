@@ -107,6 +107,18 @@ describe('RunDetailScreen', () => {
     expect(screen.queryByRole('button', { name: /停止这次运行/ })).not.toBeInTheDocument();
   });
 
+  it.each([
+    [RunStatus.TIMED_OUT, '等待回复超时'],
+    [RunStatus.INTERRUPTED, '运行已中断'],
+  ])('终态 %s 不显示停止按钮，也不会调用 StopRun', async (status, label) => {
+    getRunMock.mockResolvedValue({ summary: summary(status), prompt: '', output: '', resultJson: '', logsPath: '', artifactsDir: '', cleanupError: '', driver: '', imageRef: '', warnings: [], errorStack: '' });
+    renderScreen();
+
+    await waitFor(() => expect(screen.getByText(label)).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /停止这次运行|结束任务/ })).not.toBeInTheDocument();
+    expect(stopRunMock).not.toHaveBeenCalled();
+  });
+
   it('等待输入时发送回复，并把持久化事件显示为对话记录', async () => {
     const sendMock = vi.fn().mockResolvedValue(undefined);
     useRunConversationMock.mockReturnValue({ send: sendMock, isSending: false, error: null });

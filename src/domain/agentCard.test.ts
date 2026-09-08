@@ -74,6 +74,8 @@ describe('runStatusLabel', () => {
     expect(runStatusLabel(RunStatus.SUCCEEDED)).toBe('已完成');
     expect(runStatusLabel(RunStatus.FAILED)).toBe('出了点问题');
     expect(runStatusLabel(RunStatus.CANCELED)).toBe('已停止');
+    expect(runStatusLabel(RunStatus.TIMED_OUT)).toBe('等待回复超时');
+    expect(runStatusLabel(RunStatus.INTERRUPTED)).toBe('运行已中断');
   });
 });
 

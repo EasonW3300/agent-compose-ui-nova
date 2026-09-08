@@ -72,6 +72,15 @@ describe('runView', () => {
     expect(isRunTerminal(RunStatus.WAITING_FOR_INPUT)).toBe(false);
   });
 
+  it('等待超时与守护进程中断有各自的终态文案和视觉语义', () => {
+    expect(runStatusLabel(RunStatus.TIMED_OUT)).toBe('等待回复超时');
+    expect(runStatusLabel(RunStatus.INTERRUPTED)).toBe('运行已中断');
+    expect(runStatusTone(RunStatus.TIMED_OUT)).toBe('timed-out');
+    expect(runStatusTone(RunStatus.INTERRUPTED)).toBe('interrupted');
+    expect(isRunTerminal(RunStatus.TIMED_OUT)).toBe(true);
+    expect(isRunTerminal(RunStatus.INTERRUPTED)).toBe(true);
+  });
+
   it('formatDuration 人类可读', () => {
     expect(formatDuration(0n)).toBe('—');
     expect(formatDuration(3_000n)).toBe('3 秒');
@@ -100,6 +109,7 @@ describe('runView', () => {
     expect(shouldAutoRefreshRuns([{ status: RunStatus.RUNNING }])).toBe(true);
     expect(shouldAutoRefreshRuns([{ status: RunStatus.SUCCEEDED }, { status: RunStatus.PENDING }])).toBe(true);
     expect(shouldAutoRefreshRuns([{ status: RunStatus.SUCCEEDED }, { status: RunStatus.FAILED }])).toBe(false);
+    expect(shouldAutoRefreshRuns([{ status: RunStatus.TIMED_OUT }, { status: RunStatus.INTERRUPTED }])).toBe(false);
     expect(shouldAutoRefreshRuns([])).toBe(false);
   });
 });

@@ -8,14 +8,18 @@ import {
 import { runStatusLabel } from './agentCard';
 
 export function isRunTerminal(status: RunStatus): boolean {
+  // These statuses have no resumable daemon work. Keeping them terminal prevents
+  // the runs list from polling indefinitely after a reply timeout or restart.
   return (
     status === RunStatus.SUCCEEDED ||
     status === RunStatus.FAILED ||
-    status === RunStatus.CANCELED
+    status === RunStatus.CANCELED ||
+    status === RunStatus.TIMED_OUT ||
+    status === RunStatus.INTERRUPTED
   );
 }
 
-export type RunStatusTone = 'running' | 'waiting' | 'succeeded' | 'failed' | 'stopped' | 'idle';
+export type RunStatusTone = 'running' | 'waiting' | 'succeeded' | 'failed' | 'stopped' | 'timed-out' | 'interrupted' | 'idle';
 
 export function runStatusTone(status: RunStatus): RunStatusTone {
   switch (status) {
@@ -24,6 +28,8 @@ export function runStatusTone(status: RunStatus): RunStatusTone {
     case RunStatus.SUCCEEDED: return 'succeeded';
     case RunStatus.FAILED: return 'failed';
     case RunStatus.CANCELED: return 'stopped';
+    case RunStatus.TIMED_OUT: return 'timed-out';
+    case RunStatus.INTERRUPTED: return 'interrupted';
     default: return 'idle';
   }
 }

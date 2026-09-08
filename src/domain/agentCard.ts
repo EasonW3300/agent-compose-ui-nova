@@ -34,6 +34,8 @@ export function runStatusLabel(status: RunStatus): string {
     case RunStatus.SUCCEEDED: return '已完成';
     case RunStatus.FAILED: return '出了点问题';
     case RunStatus.CANCELED: return '已停止';
+    case RunStatus.TIMED_OUT: return '等待回复超时';
+    case RunStatus.INTERRUPTED: return '运行已中断';
     case RunStatus.PENDING: return '排队中';
     default: return '未知';
   }
