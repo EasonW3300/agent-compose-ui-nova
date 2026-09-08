@@ -15,11 +15,12 @@ export function isRunTerminal(status: RunStatus): boolean {
   );
 }
 
-export type RunStatusTone = 'running' | 'succeeded' | 'failed' | 'stopped' | 'idle';
+export type RunStatusTone = 'running' | 'waiting' | 'succeeded' | 'failed' | 'stopped' | 'idle';
 
 export function runStatusTone(status: RunStatus): RunStatusTone {
   switch (status) {
     case RunStatus.RUNNING: return 'running';
+    case RunStatus.WAITING_FOR_INPUT: return 'waiting';
     case RunStatus.SUCCEEDED: return 'succeeded';
     case RunStatus.FAILED: return 'failed';
     case RunStatus.CANCELED: return 'stopped';

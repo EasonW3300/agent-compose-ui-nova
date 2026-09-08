@@ -12,6 +12,7 @@ import {
   runToRow,
   shouldAutoRefreshRuns,
 } from './runView';
+import { runStatusLabel } from './agentCard';
 
 function summary(over: MessageInitShape<typeof RunSummarySchema> = {}): Parameters<typeof runToRow>[0] {
   return create(RunSummarySchema, {
@@ -63,6 +64,12 @@ describe('runView', () => {
     expect(runStatusTone(RunStatus.CANCELED)).toBe('stopped');
     expect(runStatusTone(RunStatus.PENDING)).toBe('idle');
     expect(runStatusTone(RunStatus.UNSPECIFIED)).toBe('idle');
+  });
+
+  it('等待输入运行显示为等待你的回复，且仍是非终态', () => {
+    expect(runStatusLabel(RunStatus.WAITING_FOR_INPUT)).toBe('等待你的回复');
+    expect(runStatusTone(RunStatus.WAITING_FOR_INPUT)).toBe('waiting');
+    expect(isRunTerminal(RunStatus.WAITING_FOR_INPUT)).toBe(false);
   });
 
   it('formatDuration 人类可读', () => {

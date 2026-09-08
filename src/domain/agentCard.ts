@@ -26,6 +26,7 @@ export function describeAgentCardStatus(s: AgentCardStatus): string {
 export function runStatusLabel(status: RunStatus): string {
   switch (status) {
     case RunStatus.RUNNING: return '正在工作';
+    case RunStatus.WAITING_FOR_INPUT: return '等待你的回复';
     case RunStatus.SUCCEEDED: return '已完成';
     case RunStatus.FAILED: return '出了点问题';
     case RunStatus.CANCELED: return '已停止';
